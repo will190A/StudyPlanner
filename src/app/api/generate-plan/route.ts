@@ -35,8 +35,8 @@ export async function POST(req: Request) {
     const end = new Date(endDate);
     
     // 确保日期是本地时间
-    start.setHours(0, 0, 0, 0);
-    end.setHours(0, 0, 0, 0);
+    start.setHours(12, 0, 0, 0);  // 设置为中午12点，避免时区问题
+    end.setHours(12, 0, 0, 0);
     
     // 计算天数差（包含开始和结束日期）
     const totalDays = Math.floor((end.getTime() - start.getTime()) / (1000 * 60 * 60 * 24)) + 1;
@@ -49,47 +49,64 @@ export async function POST(req: Request) {
     for (let i = 0; i < totalDays; i++) {
       const date = new Date(start);
       date.setDate(start.getDate() + i);
-      taskDates.push(date.toISOString().split('T')[0]);
+      // 使用本地时间格式
+      taskDates.push(date.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'));
     }
 
     console.log('Date range:', {
-      start: start.toISOString().split('T')[0],
-      end: end.toISOString().split('T')[0],
+      startDate,
+      endDate,
+      start: start.toLocaleDateString('zh-CN'),
+      end: end.toLocaleDateString('zh-CN'),
       totalDays,
       taskDates
     });
 
-    const prompt = `你是一个学习计划生成器。请根据以下信息生成学习任务列表，并只返回一个有效的 JSON 数组，不要包含任何其他文字说明。
+    const prompt = `作为一个学习计划生成器，请生成一个学习任务列表。请确保返回的是一个有效的 JSON 数组，不要包含任何其他文字。
 
 输入信息：
 - 科目：${subjects.join('、')}
 - 总天数：${totalDays}天
-- 每日学习时长：${dailyHours}小时
-- 每科目总时长：${hoursPerSubject}小时
+- 每日学习时长：${dailyHours}小时（这个是硬性要求，每天的任务时长加起来必须等于这个数）
 - 任务日期列表：${taskDates.join('、')}
 
-要求：
-1. 为每个科目生成${Math.ceil(totalDays / subjects.length)}个任务
-2. 每个任务时长为2小时
-3. 任务日期必须严格从${startDate}开始，到${endDate}结束，不要使用其他日期
-4. 返回格式必须是严格的 JSON 数组
-5. 每个任务的日期必须从任务日期列表中选取
-6. 确保任务均匀分布在所有日期上
-7. 不要修改日期，严格按照给定的日期范围生成任务
+生成要求：
+1. 每天的任务总时长必须严格等于${dailyHours}小时，不能多也不能少
+2. 每个任务的时长必须是0.5的倍数（如0.5、1、1.5、2小时等）
+3. 科目要均匀分布在整个学习周期内
+4. 每天可以安排一个或多个任务，但所有任务时长之和必须等于${dailyHours}小时
+5. 任务描述要具体且符合科目特点，例如：
+   - 数学：学习微积分的导数概念和计算
+   - 英语：练习雅思听力Section 1
+   - 物理：学习力学中的动量守恒
+   - 化学：掌握有机物的命名规则
+   - 生物：学习细胞的基本结构
+   - 历史：复习抗日战争的重要战役
+   - 地理：学习气候类型的判断方法
+   - 政治：理解价值规律的基本内容
 
-返回格式示例：
+示例：如果每日学习时长是2小时，可以这样安排：
 [
   {
     "id": "task-1",
     "subject": "数学",
-    "description": "学习内容",
-    "duration": 2,
+    "description": "学习微积分：导数的概念和计算",
+    "duration": 1.5,
+    "date": "${startDate}",
+    "completed": false
+  },
+  {
+    "id": "task-2",
+    "subject": "英语",
+    "description": "练习雅思听力Section 1",
+    "duration": 0.5,
     "date": "${startDate}",
     "completed": false
   }
 ]
+注意上面两个任务的时长加起来等于2小时
 
-请直接返回 JSON 数组，不要包含任何其他文字。`;
+请按照这个格式返回所有日期的任务，确保每天的任务时长之和等于${dailyHours}小时。`;
 
     console.log('Sending request to Moonshot API...');
     try {
@@ -103,7 +120,8 @@ export async function POST(req: Request) {
           model: 'moonshot-v1-8k',
           messages: [{ role: 'user', content: prompt }],
           temperature: 0.7,
-          max_tokens: 1000,
+          max_tokens: 2000,
+          response_format: { type: "json_object" }
         }),
         agent,
       });
@@ -124,18 +142,58 @@ export async function POST(req: Request) {
       }
 
       const content = data.choices[0].message.content;
-      console.log('Parsing content:', content);
+      console.log('Raw content from API:', content);
       
-      // 尝试提取 JSON 部分
-      const jsonMatch = content.match(/\[[\s\S]*\]/);
-      if (!jsonMatch) {
-        throw new Error('No JSON array found in response');
+      let tasks;
+      try {
+        // 尝试解析内容
+        const parsed = JSON.parse(content);
+        // 检查是否是数组或者包含tasks数组
+        if (Array.isArray(parsed)) {
+          tasks = parsed;
+        } else if (parsed.tasks && Array.isArray(parsed.tasks)) {
+          tasks = parsed.tasks;
+        } else {
+          // 如果是对象但没有tasks数组，尝试转换为数组
+          tasks = [parsed];
+        }
+      } catch (e) {
+        console.error('Failed to parse JSON directly:', e);
+        // 如果直接解析失败，尝试提取 JSON 部分
+        const jsonMatch = content.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+          // 如果没有找到数组，尝试匹配单个对象
+          const objectMatch = content.match(/\{[\s\S]*\}/);
+          if (objectMatch) {
+            try {
+              const singleTask = JSON.parse(objectMatch[0]);
+              tasks = [singleTask];
+            } catch (e2) {
+              console.error('Failed to parse single task:', e2);
+              throw new Error('No valid JSON found in response');
+            }
+          } else {
+            console.error('Failed to parse response:', content);
+            throw new Error('No valid JSON found in response');
+          }
+        } else {
+          try {
+            tasks = JSON.parse(jsonMatch[0]);
+          } catch (e2) {
+            console.error('Failed to parse JSON array:', e2);
+            throw new Error('Invalid JSON array in response');
+          }
+        }
       }
-      
-      const tasks = JSON.parse(jsonMatch[0]);
 
       if (!Array.isArray(tasks)) {
-        throw new Error('Invalid response format from Moonshot API: expected an array of tasks');
+        console.error('Parsed content is not an array:', tasks);
+        throw new Error('Invalid response format: expected an array of tasks');
+      }
+
+      if (tasks.length === 0) {
+        console.error('No tasks generated');
+        throw new Error('No tasks were generated');
       }
 
       // 确保每个任务都有正确的格式和日期
@@ -150,16 +208,36 @@ export async function POST(req: Request) {
           id: `task-${index + 1}`,
           subject: task.subject || subjects[0],
           description: task.description || `学习任务 ${index + 1}`,
-          duration: task.duration || 2,
+          duration: parseFloat(task.duration) || 2,
           date: taskDates.includes(taskDate) ? taskDate : startDate,
           completed: false
         };
       });
 
-      // 验证任务数量
-      const expectedTaskCount = Math.ceil(totalDays / subjects.length) * subjects.length;
-      if (formattedTasks.length !== expectedTaskCount) {
-        console.warn(`Expected ${expectedTaskCount} tasks, but got ${formattedTasks.length}`);
+      // 验证每天的任务时长
+      const tasksByDate = taskDates.map(date => ({
+        date,
+        tasks: formattedTasks.filter(task => task.date === date),
+        totalHours: formattedTasks
+          .filter(task => task.date === date)
+          .reduce((sum, task) => sum + task.duration, 0)
+      }));
+
+      const invalidDates = tasksByDate.filter(day => Math.abs(day.totalHours - dailyHours) > 0.01);
+      if (invalidDates.length > 0) {
+        console.error('Days with incorrect total hours:', 
+          invalidDates.map(day => ({
+            date: day.date,
+            totalHours: day.totalHours,
+            expected: dailyHours,
+            difference: day.totalHours - dailyHours,
+            tasks: day.tasks.map(t => ({
+              subject: t.subject,
+              duration: t.duration
+            }))
+          }))
+        );
+        throw new Error(`Some days have incorrect total hours. Each day must have exactly ${dailyHours} hours of tasks.`);
       }
 
       console.log('Successfully generated tasks:', formattedTasks.length);

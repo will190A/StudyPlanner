@@ -59,8 +59,8 @@ export default function GeneratePage() {
         },
         body: JSON.stringify({
           subjects: selectedSubjects,
-          startDate: new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
-          endDate: new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
+          startDate: startDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
+          endDate: endDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
           dailyHours,
         }),
       });
@@ -78,8 +78,8 @@ export default function GeneratePage() {
       const result = await savePlan({
         userId: user?.id || '',
         subjects: selectedSubjects,
-        startDate: new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
-        endDate: new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
+        startDate: startDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
+        endDate: endDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
         dailyHours,
         tasks
       })
