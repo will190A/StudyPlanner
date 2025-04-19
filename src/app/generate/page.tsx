@@ -59,8 +59,8 @@ export default function GeneratePage() {
         },
         body: JSON.stringify({
           subjects: selectedSubjects,
-          startDate: startDate.toISOString().split('T')[0],
-          endDate: endDate.toISOString().split('T')[0],
+          startDate: new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
+          endDate: new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
           dailyHours,
         }),
       });
@@ -78,17 +78,20 @@ export default function GeneratePage() {
       const result = await savePlan({
         userId: user?.id || '',
         subjects: selectedSubjects,
-        startDate: startDate.toISOString().split('T')[0],
-        endDate: endDate.toISOString().split('T')[0],
+        startDate: new Date(startDate.getTime() - startDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
+        endDate: new Date(endDate.getTime() - endDate.getTimezoneOffset() * 60000).toISOString().split('T')[0],
         dailyHours,
         tasks
       })
 
+      console.log('Save plan result:', result)
+
       if (result.success && result.data) {
-        console.log('Plan saved, redirecting...')
-        // 跳转到新创建的计划页面
-        router.push(`/plan?id=${result.data.id}`)
+        console.log('Plan saved successfully:', result.data)
+        // 跳转到全部学习计划页面
+        router.push('/plans')
       } else {
+        console.error('Failed to save plan:', result.error)
         throw new Error(result.error || '保存计划失败')
       }
     } catch (error) {

@@ -138,13 +138,26 @@ export const usePlanStore = create<PlanState>()(
             return { success: false, error: data.error };
           }
 
+          // 确保返回的数据包含 id
+          if (!data._id && !data.id) {
+            console.error('Plan saved but missing ID:', data);
+            return { success: false, error: 'Plan saved but missing ID' };
+          }
+
+          const savedPlan = {
+            ...data,
+            id: data._id || data.id,
+            _id: data._id || data.id
+          };
+
           set((state) => ({
-            currentPlan: data,
-            plans: [...state.plans, data],
+            currentPlan: savedPlan,
+            plans: [...state.plans, savedPlan],
             error: null,
           }));
-          return { success: true };
+          return { success: true, data: savedPlan };
         } catch (error) {
+          console.error('Error saving plan:', error);
           set({ error: 'Failed to save plan' });
           return { success: false, error: 'Failed to save plan' };
         } finally {

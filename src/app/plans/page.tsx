@@ -121,8 +121,8 @@ export default function PlansPage() {
                       </div>
                     </div>
                     <div className="text-sm text-gray-500">
-                      <p>开始日期：{plan.startDate ? new Date(plan.startDate).toLocaleDateString() : '未设置'}</p>
-                      <p>结束日期：{plan.endDate ? new Date(plan.endDate).toLocaleDateString() : '未设置'}</p>
+                      <p>开始日期：{plan.startDate || '未设置'}</p>
+                      <p>结束日期：{plan.endDate || '未设置'}</p>
                       <p>每日学习时长：{plan.dailyHours || 0} 小时</p>
                     </div>
                   </div>
