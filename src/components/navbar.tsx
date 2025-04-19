@@ -5,10 +5,17 @@ import { useAuthStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
 import { LogOut, User } from 'lucide-react'
+import { useEffect } from 'react'
 
 export default function Navbar() {
   const router = useRouter()
   const { user, isAuthenticated, logout } = useAuthStore()
+
+  useEffect(() => {
+    if (isAuthenticated && window.location.pathname === '/') {
+      router.push('/plans')
+    }
+  }, [isAuthenticated, router])
 
   const handleLogout = () => {
     logout()
@@ -26,7 +33,7 @@ export default function Navbar() {
           <div className="flex items-center space-x-4">
             <Button
               variant="ghost"
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/plans')}
               className="text-lg font-semibold"
             >
               学习计划

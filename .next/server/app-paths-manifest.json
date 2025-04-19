@@ -1,10 +1,10 @@
 {
   "/page": "app/page.js",
   "/login/page": "app/login/page.js",
+  "/generate/page": "app/generate/page.js",
+  "/plans/page": "app/plans/page.js",
+  "/plan/page": "app/plan/page.js",
   "/register/page": "app/register/page.js",
   "/api/auth/login/route": "app/api/auth/login/route.js",
-  "/generate/page": "app/generate/page.js",
-  "/api/plans/route": "app/api/plans/route.js",
-  "/plan/page": "app/plan/page.js",
-  "/api/plans/[id]/route": "app/api/plans/[id]/route.js"
+  "/api/plans/route": "app/api/plans/route.js"
 }

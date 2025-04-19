@@ -46,7 +46,7 @@ export default function RegisterPage() {
     try {
       const result = await register(name, email, password)
       if (result.success) {
-        router.push('/')
+        router.push('/plans')
       } else {
         setError(result.error || '注册失败')
       }
