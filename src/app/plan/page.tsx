@@ -1,19 +1,20 @@
 'use client'
 
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuthStore, usePlanStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Checkbox } from '@/components/ui/checkbox'
-import { useAuthStore } from '@/lib/store'
-import { usePlanStore } from '@/lib/store'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2 } from 'lucide-react'
 
 export default function PlanPage() {
   const router = useRouter()
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
-  const currentPlan = usePlanStore((state) => state.currentPlan)
-  const updateTask = usePlanStore((state) => state.updateTask)
+  const { user, isAuthenticated } = useAuthStore()
+  const { currentPlan, updateTask, deletePlan, isLoading, error } = usePlanStore()
+  const [isDeleting, setIsDeleting] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -21,18 +22,44 @@ export default function PlanPage() {
     }
   }, [isAuthenticated, router])
 
+  const handleTaskToggle = async (taskId: string, completed: boolean) => {
+    const result = await updateTask(taskId, completed)
+    if (!result.success) {
+      console.error('Failed to update task:', result.error)
+    }
+  }
+
+  const handleDeletePlan = async () => {
+    if (!currentPlan) return
+
+    if (!confirm('确定要删除这个学习计划吗？')) {
+      return
+    }
+
+    setIsDeleting(true)
+    try {
+      const result = await deletePlan(currentPlan.id)
+      if (result.success) {
+        router.push('/')
+      } else {
+        console.error('Failed to delete plan:', result.error)
+      }
+    } finally {
+      setIsDeleting(false)
+    }
+  }
+
   if (!currentPlan) {
     return (
-      <div className="container mx-auto py-8">
-        <Card className="max-w-2xl mx-auto">
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-semibold mb-4">No Study Plan Found</h2>
-            <p className="text-gray-600 mb-6">You haven't created a study plan yet.</p>
-            <Button
-              onClick={() => router.push('/generate')}
-              className="bg-gradient-to-r from-purple-600 to-blue-600"
-            >
-              Create New Plan
+      <div className="container mx-auto p-4">
+        <Card>
+          <CardHeader>
+            <CardTitle>没有找到学习计划</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>请创建一个新的学习计划或选择一个现有的计划。</p>
+            <Button onClick={() => router.push('/generate')} className="mt-4">
+              创建新计划
             </Button>
           </CardContent>
         </Card>
@@ -40,77 +67,104 @@ export default function PlanPage() {
     )
   }
 
-  const completedTasks = currentPlan.tasks.filter((task) => task.completed).length
   const totalTasks = currentPlan.tasks.length
-  const progress = Math.round((completedTasks / totalTasks) * 100)
+  const completedTasks = currentPlan.tasks.filter((task) => task.completed).length
+  const progress = totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
 
-  // Group tasks by date
+  // 按日期分组任务
   const tasksByDate = currentPlan.tasks.reduce((acc, task) => {
-    const date = task.date
-    if (!acc[date]) {
-      acc[date] = []
+    if (!acc[task.date]) {
+      acc[task.date] = []
     }
-    acc[date].push(task)
+    acc[task.date].push(task)
     return acc
   }, {} as Record<string, typeof currentPlan.tasks>)
 
   return (
-    <div className="container mx-auto py-8">
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="flex items-center justify-between">
-          <h1 className="text-3xl font-bold">Your Study Plan</h1>
-          <Button
-            variant="outline"
-            onClick={() => router.push('/generate')}
-          >
-            Edit Plan
-          </Button>
-        </div>
+    <div className="container mx-auto p-4">
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Overall Progress</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              <div className="flex justify-between text-sm">
-                <span>{progress}% Complete</span>
-                <span>{completedTasks}/{totalTasks} Tasks</span>
+      <Card className="mb-6">
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>学习计划进度</CardTitle>
+            <Button
+              variant="destructive"
+              onClick={handleDeletePlan}
+              disabled={isDeleting}
+            >
+              {isDeleting ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  删除中...
+                </>
+              ) : (
+                '删除计划'
+              )}
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div>
+              <div className="flex justify-between mb-2">
+                <span>总体进度</span>
+                <span>{Math.round(progress)}%</span>
               </div>
-              <Progress value={progress} />
+              <Progress value={progress} className="h-2" />
             </div>
-          </CardContent>
-        </Card>
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <p className="text-sm text-gray-500">总任务数</p>
+                <p className="text-2xl font-bold">{totalTasks}</p>
+              </div>
+              <div>
+                <p className="text-sm text-gray-500">已完成任务</p>
+                <p className="text-2xl font-bold">{completedTasks}</p>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <div className="grid gap-6">
-          {Object.entries(tasksByDate).map(([date, tasks]) => (
+      <div className="space-y-6">
+        {Object.entries(tasksByDate)
+          .sort(([dateA], [dateB]) => new Date(dateA).getTime() - new Date(dateB).getTime())
+          .map(([date, tasks]) => (
             <Card key={date}>
               <CardHeader>
-                <CardTitle>{new Date(date).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  year: 'numeric',
-                  month: 'long',
-                  day: 'numeric'
-                })}</CardTitle>
+                <CardTitle>{new Date(date).toLocaleDateString()}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
                   {tasks.map((task) => (
-                    <div key={task.id} className="flex items-start space-x-4">
+                    <div
+                      key={task.id}
+                      className="flex items-center space-x-4 p-4 border rounded-lg"
+                    >
                       <Checkbox
                         id={task.id}
                         checked={task.completed}
-                        onCheckedChange={(checked) => updateTask(task.id, checked as boolean)}
+                        onCheckedChange={(checked) =>
+                          handleTaskToggle(task.id, checked as boolean)
+                        }
+                        disabled={isLoading}
                       />
-                      <div className="space-y-1">
+                      <div className="flex-1">
                         <label
                           htmlFor={task.id}
-                          className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                          className={`text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 ${
+                            task.completed ? 'line-through text-gray-500' : ''
+                          }`}
                         >
-                          {task.subject}
+                          {task.subject} - {task.description}
                         </label>
-                        <p className="text-sm text-muted-foreground">
-                          {task.description} ({task.duration} hours)
+                        <p className="text-sm text-gray-500">
+                          预计时长: {task.duration} 小时
                         </p>
                       </div>
                     </div>
@@ -119,7 +173,6 @@ export default function PlanPage() {
               </CardContent>
             </Card>
           ))}
-        </div>
       </div>
     </div>
   )

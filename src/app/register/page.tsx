@@ -1,118 +1,159 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
 import { useRouter } from 'next/navigation'
+import { useAuthStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useAuthStore } from '@/lib/store'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2 } from 'lucide-react'
+import Link from 'next/link'
 
 export default function RegisterPage() {
   const router = useRouter()
-  const login = useAuthStore((state) => state.login)
+  const { register } = useAuthStore()
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirmPassword, setConfirmPassword] = useState('')
   const [error, setError] = useState('')
+  const [isLoading, setIsLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setError('')
 
+    // 表单验证
     if (!name || !email || !password || !confirmPassword) {
-      setError('Please fill in all fields')
+      setError('请填写所有必填字段')
       return
     }
 
     if (password !== confirmPassword) {
-      setError('Passwords do not match')
+      setError('两次输入的密码不一致')
       return
     }
 
-    // In a real app, this would be an API call
-    login({
-      id: Date.now().toString(),
-      name,
-      email,
-    })
-    router.push('/generate')
+    if (password.length < 6) {
+      setError('密码长度至少为6位')
+      return
+    }
+
+    setIsLoading(true)
+
+    try {
+      const result = await register(name, email, password)
+      if (result.success) {
+        router.push('/')
+      } else {
+        setError(result.error || '注册失败')
+      }
+    } catch (error) {
+      setError('注册失败，请稍后重试')
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (
-    <div className="container mx-auto flex items-center justify-center min-h-screen py-8">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle>Create an account</CardTitle>
-          <CardDescription>
-            Enter your details below to create your account
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
-            {error && (
-              <p className="text-sm text-red-500 text-center">{error}</p>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input
-                id="name"
-                placeholder="Enter your name"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                id="email"
-                type="email"
-                placeholder="Enter your email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="Create a password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirmPassword">Confirm Password</Label>
-              <Input
-                id="confirmPassword"
-                type="password"
-                placeholder="Confirm your password"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600"
-            >
-              Create Account
-            </Button>
-            <p className="text-center text-sm text-gray-600">
-              Already have an account?{' '}
-              <Link href="/login" className="text-purple-600 hover:underline">
-                Login
-              </Link>
-            </p>
-          </form>
-        </CardContent>
-      </Card>
+    <div className="container mx-auto p-4">
+      <div className="max-w-md mx-auto">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle>注册</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">姓名</Label>
+                <Input
+                  id="name"
+                  type="text"
+                  placeholder="请输入姓名"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="email">邮箱</Label>
+                <Input
+                  id="email"
+                  type="email"
+                  placeholder="请输入邮箱"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="password">密码</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="请输入密码"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="confirmPassword">确认密码</Label>
+                <Input
+                  id="confirmPassword"
+                  type="password"
+                  placeholder="请再次输入密码"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  required
+                  disabled={isLoading}
+                />
+              </div>
+
+              <div className="flex items-center justify-between">
+                <Button
+                  type="submit"
+                  className="w-full"
+                  disabled={isLoading}
+                >
+                  {isLoading ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      注册中...
+                    </>
+                  ) : (
+                    '注册'
+                  )}
+                </Button>
+              </div>
+
+              <div className="text-center text-sm">
+                <span className="text-gray-500">已有账号？</span>
+                <Link
+                  href="/login"
+                  className="text-primary hover:underline"
+                >
+                  立即登录
+                </Link>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   )
 } 

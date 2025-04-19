@@ -12,24 +12,41 @@ interface AuthState {
   isAuthenticated: boolean
   login: (user: User) => void
   logout: () => void
+  register: (name: string, email: string, password: string) => Promise<{ success: boolean; error?: string }>
 }
 
-export const useAuthStore = create<AuthState>()(
-  persist(
-    (set) => ({
-      user: null,
-      isAuthenticated: false,
-      login: (user) => set({ user, isAuthenticated: true }),
-      logout: () => set({ user: null, isAuthenticated: false }),
-    }),
-    {
-      name: 'auth-storage',
+export const useAuthStore = create<AuthState>()((set) => ({
+  user: null,
+  isAuthenticated: false,
+  login: (user) => set({ user, isAuthenticated: true }),
+  logout: () => set({ user: null, isAuthenticated: false }),
+  register: async (name, email, password) => {
+    try {
+      const response = await fetch('/api/auth/register', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ name, email, password }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error };
+      }
+
+      set({ user: data, isAuthenticated: true });
+      return { success: true };
+    } catch (error) {
+      return { success: false, error: 'Registration failed' };
     }
-  )
-)
+  },
+}))
 
 interface StudyPlan {
   id: string
+  userId: string
   subjects: string[]
   startDate: string
   endDate: string
@@ -46,29 +63,180 @@ interface StudyPlan {
 
 interface PlanState {
   currentPlan: StudyPlan | null
+  plans: StudyPlan[]
   setPlan: (plan: StudyPlan) => void
-  updateTask: (taskId: string, completed: boolean) => void
+  updateTask: (taskId: string, completed: boolean) => Promise<{ success: boolean; error?: string }>
+  savePlan: (plan: StudyPlan) => Promise<{ success: boolean; error?: string }>
+  updatePlan: (plan: StudyPlan) => Promise<{ success: boolean; error?: string }>
+  deletePlan: (planId: string) => Promise<{ success: boolean; error?: string }>
+  fetchPlans: (userId: string) => Promise<{ success: boolean; error?: string; data?: StudyPlan[] }>
+  isLoading: boolean
+  error: string | null
 }
 
 export const usePlanStore = create<PlanState>()(
   persist(
-    (set) => ({
+    (set, get) => ({
       currentPlan: null,
-      setPlan: (plan) => set({ currentPlan: plan }),
-      updateTask: (taskId, completed) =>
-        set((state) => ({
-          currentPlan: state.currentPlan
-            ? {
-                ...state.currentPlan,
-                tasks: state.currentPlan.tasks.map((task) =>
-                  task.id === taskId ? { ...task, completed } : task
-                ),
-              }
-            : null,
-        })),
+      plans: [],
+      isLoading: false,
+      error: null,
+      setPlan: (plan) => set({ currentPlan: plan, error: null }),
+      updateTask: async (taskId, completed) => {
+        const currentPlan = get().currentPlan;
+        if (!currentPlan) {
+          return { success: false, error: 'No plan found' };
+        }
+
+        // 乐观更新
+        const updatedPlan = {
+          ...currentPlan,
+          tasks: currentPlan.tasks.map((task) =>
+            task.id === taskId ? { ...task, completed } : task
+          ),
+        };
+        set({ currentPlan: updatedPlan, error: null });
+
+        try {
+          set({ isLoading: true });
+          const response = await fetch(`/api/plans/${currentPlan.id}/tasks/${taskId}`, {
+            method: 'PATCH',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ completed }),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            // 如果请求失败，回滚到原始状态
+            set({ currentPlan, error: data.error });
+            return { success: false, error: data.error };
+          }
+
+          set({ currentPlan: data, error: null });
+          return { success: true };
+        } catch (error) {
+          // 如果请求失败，回滚到原始状态
+          set({ currentPlan, error: 'Failed to update task' });
+          return { success: false, error: 'Failed to update task' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      savePlan: async (plan) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await fetch('/api/plans', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(plan),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            set({ error: data.error });
+            return { success: false, error: data.error };
+          }
+
+          set((state) => ({
+            currentPlan: data,
+            plans: [...state.plans, data],
+            error: null,
+          }));
+          return { success: true };
+        } catch (error) {
+          set({ error: 'Failed to save plan' });
+          return { success: false, error: 'Failed to save plan' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      updatePlan: async (plan) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await fetch(`/api/plans/${plan.id}`, {
+            method: 'PUT',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(plan),
+          });
+
+          const data = await response.json();
+
+          if (!response.ok) {
+            set({ error: data.error });
+            return { success: false, error: data.error };
+          }
+
+          set((state) => ({
+            currentPlan: data,
+            plans: state.plans.map((p) => (p.id === data.id ? data : p)),
+            error: null,
+          }));
+          return { success: true };
+        } catch (error) {
+          set({ error: 'Failed to update plan' });
+          return { success: false, error: 'Failed to update plan' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      deletePlan: async (planId) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await fetch(`/api/plans/${planId}`, {
+            method: 'DELETE',
+          });
+
+          if (!response.ok) {
+            const data = await response.json();
+            set({ error: data.error });
+            return { success: false, error: data.error };
+          }
+
+          set((state) => ({
+            currentPlan: state.currentPlan?.id === planId ? null : state.currentPlan,
+            plans: state.plans.filter((p) => p.id !== planId),
+            error: null,
+          }));
+          return { success: true };
+        } catch (error) {
+          set({ error: 'Failed to delete plan' });
+          return { success: false, error: 'Failed to delete plan' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
+      fetchPlans: async (userId) => {
+        try {
+          set({ isLoading: true, error: null });
+          const response = await fetch(`/api/plans?userId=${userId}`);
+          const data = await response.json();
+
+          if (!response.ok) {
+            set({ error: data.error });
+            return { success: false, error: data.error };
+          }
+
+          set({ plans: data, error: null });
+          return { success: true, data };
+        } catch (error) {
+          set({ error: 'Failed to fetch plans' });
+          return { success: false, error: 'Failed to fetch plans' };
+        } finally {
+          set({ isLoading: false });
+        }
+      },
     }),
     {
-      name: 'plan-storage',
+      name: 'study-plan-storage',
+      partialize: (state) => ({ currentPlan: state.currentPlan, plans: state.plans }),
     }
   )
 ) 

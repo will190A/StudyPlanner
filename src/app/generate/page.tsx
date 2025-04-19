@@ -2,67 +2,39 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import { useAuthStore, usePlanStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
 import { DatePicker } from '@/components/ui/date-picker'
 import { Slider } from '@/components/ui/slider'
-import { Badge } from '@/components/ui/badge'
-import { useAuthStore, usePlanStore } from '@/lib/store'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { Loader2 } from 'lucide-react'
 
 const subjects = [
-  'Mathematics',
-  'Physics',
-  'Chemistry',
-  'Biology',
-  'Computer Science',
-  'English',
-  'History',
-  'Geography',
+  '数学',
+  '英语',
+  '物理',
+  '化学',
+  '生物',
+  '历史',
+  '地理',
+  '政治',
 ]
-
-// Mock function to generate tasks (in a real app, this would be an API call)
-const generateTasks = (subjects: string[], startDate: Date, endDate: Date, dailyHours: number) => {
-  const tasks = []
-  const currentDate = new Date(startDate)
-  const end = new Date(endDate)
-  const taskDescriptions = {
-    Mathematics: ['Study calculus', 'Practice algebra', 'Review geometry'],
-    Physics: ['Learn mechanics', 'Study electricity', 'Practice problem-solving'],
-    Chemistry: ['Study organic chemistry', 'Review periodic table', 'Practice equations'],
-    Biology: ['Study cell biology', 'Learn genetics', 'Review ecosystems'],
-    'Computer Science': ['Practice coding', 'Study algorithms', 'Learn data structures'],
-    English: ['Reading comprehension', 'Writing practice', 'Grammar review'],
-    History: ['Study world history', 'Review important events', 'Learn about civilizations'],
-    Geography: ['Study maps', 'Learn about climate', 'Review continents'],
-  }
-
-  while (currentDate <= end) {
-    const dayTasks = subjects.map(subject => ({
-      id: `${subject}-${currentDate.toISOString()}`,
-      date: currentDate.toISOString(),
-      subject,
-      description: taskDescriptions[subject as keyof typeof taskDescriptions][
-        Math.floor(Math.random() * 3)
-      ],
-      duration: Math.round((dailyHours / subjects.length) * 2) / 2,
-      completed: false,
-    }))
-    tasks.push(...dayTasks)
-    currentDate.setDate(currentDate.getDate() + 1)
-  }
-
-  return tasks
-}
 
 export default function GeneratePage() {
   const router = useRouter()
-  const isAuthenticated = useAuthStore((state) => state.isAuthenticated)
-  const setPlan = usePlanStore((state) => state.setPlan)
+  const { user, isAuthenticated } = useAuthStore()
+  const { savePlan, updatePlan, isLoading, error } = usePlanStore()
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
-  const [startDate, setStartDate] = useState<Date>()
-  const [endDate, setEndDate] = useState<Date>()
-  const [studyHours, setStudyHours] = useState<number>(4)
+  const [startDate, setStartDate] = useState<Date>(new Date())
+  const [endDate, setEndDate] = useState<Date>(() => {
+    const date = new Date()
+    date.setDate(date.getDate() + 7)
+    return date
+  })
+  const [dailyHours, setDailyHours] = useState(2)
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -70,95 +42,147 @@ export default function GeneratePage() {
     }
   }, [isAuthenticated, router])
 
-  const toggleSubject = (subject: string) => {
-    setSelectedSubjects(prev =>
-      prev.includes(subject)
-        ? prev.filter(s => s !== subject)
-        : [...prev, subject]
-    )
+  const generateTasks = () => {
+    const tasks = []
+    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
+    const hoursPerSubject = (dailyHours * days) / selectedSubjects.length
+
+    selectedSubjects.forEach((subject) => {
+      const subjectHours = Math.ceil(hoursPerSubject)
+      const tasksPerSubject = Math.ceil(subjectHours / 2) // 每个任务2小时
+
+      for (let i = 0; i < tasksPerSubject; i++) {
+        const date = new Date(startDate)
+        date.setDate(date.getDate() + Math.floor((i * days) / tasksPerSubject))
+        
+        tasks.push({
+          id: `${subject}-${i}`,
+          date: date.toISOString().split('T')[0],
+          subject,
+          description: `${subject} 学习任务 ${i + 1}`,
+          duration: 2,
+          completed: false,
+        })
+      }
+    })
+
+    return tasks
   }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    
-    if (!startDate || !endDate || selectedSubjects.length === 0) {
-      alert('Please fill in all required fields')
+  const handleSubmit = async () => {
+    if (selectedSubjects.length === 0) {
       return
     }
 
-    const tasks = generateTasks(selectedSubjects, startDate, endDate, studyHours)
-    const plan = {
-      id: Date.now().toString(),
-      subjects: selectedSubjects,
-      startDate: startDate.toISOString(),
-      endDate: endDate.toISOString(),
-      dailyHours: studyHours,
-      tasks,
-    }
+    setIsSubmitting(true)
+    try {
+      const tasks = generateTasks()
+      const plan = {
+        userId: user?.id,
+        subjects: selectedSubjects,
+        startDate: startDate.toISOString().split('T')[0],
+        endDate: endDate.toISOString().split('T')[0],
+        dailyHours,
+        tasks,
+      }
 
-    setPlan(plan)
-    router.push('/plan')
+      const result = await savePlan(plan)
+      if (result.success) {
+        router.push('/plan')
+      } else {
+        console.error('Failed to save plan:', result.error)
+      }
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
   return (
-    <div className="container mx-auto py-8">
-      <Card className="max-w-2xl mx-auto">
+    <div className="container mx-auto p-4">
+      {error && (
+        <Alert variant="destructive" className="mb-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+      )}
+
+      <Card>
         <CardHeader>
-          <CardTitle>Generate Your Study Plan</CardTitle>
-          <CardDescription>
-            Fill in the details below to create your personalized study plan
-          </CardDescription>
+          <CardTitle>创建学习计划</CardTitle>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-8">
-            <div className="space-y-4">
-              <Label>Subjects (select at least one)</Label>
-              <div className="flex flex-wrap gap-2">
-                {subjects.map(subject => (
-                  <Badge
+          <div className="space-y-6">
+            <div>
+              <Label>选择科目</Label>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
+                {subjects.map((subject) => (
+                  <Button
                     key={subject}
-                    variant={selectedSubjects.includes(subject) ? "default" : "outline"}
-                    className="cursor-pointer hover:bg-primary hover:text-primary-foreground"
-                    onClick={() => toggleSubject(subject)}
+                    variant={selectedSubjects.includes(subject) ? 'default' : 'outline'}
+                    onClick={() => {
+                      if (selectedSubjects.includes(subject)) {
+                        setSelectedSubjects(selectedSubjects.filter((s) => s !== subject))
+                      } else {
+                        setSelectedSubjects([...selectedSubjects, subject])
+                      }
+                    }}
+                    disabled={isLoading || isSubmitting}
                   >
                     {subject}
-                  </Badge>
+                  </Button>
                 ))}
               </div>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-4">
-                <Label>Start Date</Label>
-                <DatePicker date={startDate} setDate={setStartDate} />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <Label>开始日期</Label>
+                <DatePicker
+                  date={startDate}
+                  setDate={setStartDate}
+                  disabled={isLoading || isSubmitting}
+                />
               </div>
-              <div className="space-y-4">
-                <Label>End Date</Label>
-                <DatePicker date={endDate} setDate={setEndDate} />
+              <div>
+                <Label>结束日期</Label>
+                <DatePicker
+                  date={endDate}
+                  setDate={setEndDate}
+                  disabled={isLoading || isSubmitting}
+                />
               </div>
             </div>
 
-            <div className="space-y-4">
-              <div className="flex justify-between">
-                <Label>Daily Study Hours</Label>
-                <span className="text-sm text-gray-500">{studyHours} hours</span>
+            <div>
+              <Label>每日学习时长（小时）</Label>
+              <div className="flex items-center space-x-4 mt-2">
+                <Slider
+                  value={[dailyHours]}
+                  onValueChange={([value]) => setDailyHours(value)}
+                  min={1}
+                  max={8}
+                  step={0.5}
+                  disabled={isLoading || isSubmitting}
+                />
+                <span className="text-sm font-medium">{dailyHours} 小时</span>
               </div>
-              <Slider
-                defaultValue={[4]}
-                max={12}
-                step={0.5}
-                onValueChange={([value]) => setStudyHours(value)}
-              />
             </div>
 
-            <Button
-              type="submit"
-              className="w-full bg-gradient-to-r from-purple-600 to-blue-600"
-              disabled={selectedSubjects.length === 0 || !startDate || !endDate}
-            >
-              Generate Plan
-            </Button>
-          </form>
+            <div className="flex justify-end">
+              <Button
+                onClick={handleSubmit}
+                disabled={selectedSubjects.length === 0 || isLoading || isSubmitting}
+              >
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    生成中...
+                  </>
+                ) : (
+                  '生成学习计划'
+                )}
+              </Button>
+            </div>
+          </div>
         </CardContent>
       </Card>
     </div>

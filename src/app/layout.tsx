@@ -1,12 +1,13 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
+import Navbar from '@/components/navbar'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'StudyPlanner - Your AI Study Assistant',
-  description: 'An AI-powered study planning platform to help you achieve your learning goals',
+  title: '学习计划助手',
+  description: '帮助你制定和管理学习计划的工具',
 }
 
 export default function RootLayout({
@@ -15,11 +16,10 @@ export default function RootLayout({
   children: React.ReactNode
 }) {
   return (
-    <html lang="en">
+    <html lang="zh">
       <body className={inter.className}>
-        <main className="min-h-screen bg-gradient-to-b from-purple-50 to-white">
-          {children}
-        </main>
+        <Navbar />
+        {children}
       </body>
     </html>
   )
