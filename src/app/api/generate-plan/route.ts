@@ -1,38 +1,11 @@
 import { NextResponse } from 'next/server';
-import OpenAI from 'openai';
 import { HttpsProxyAgent } from 'https-proxy-agent';
 
 // 配置代理（如果需要）
 const proxyUrl = process.env.HTTPS_PROXY || process.env.https_proxy;
 const agent = proxyUrl ? new HttpsProxyAgent(proxyUrl) : undefined;
 
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-  timeout: 60000, // 增加超时时间到 60 秒
-  maxRetries: 3,
-  httpAgent: agent, // 添加代理支持
-});
-
-async function generatePlanWithRetry(prompt: string, retries = 3) {
-  for (let i = 0; i < retries; i++) {
-    try {
-      console.log(`Attempt ${i + 1} to generate plan...`);
-      const completion = await openai.chat.completions.create({
-        messages: [{ role: 'user', content: prompt }],
-        model: 'gpt-3.5-turbo',
-        temperature: 0.7,
-        max_tokens: 1000,
-      });
-      return completion;
-    } catch (error) {
-      console.error(`Attempt ${i + 1} failed:`, error);
-      if (i === retries - 1) throw error;
-      // 增加重试间隔时间
-      await new Promise(resolve => setTimeout(resolve, 2000 * (i + 1)));
-    }
-  }
-  throw new Error('All retry attempts failed');
-}
+const MOONSHOT_API_URL = 'https://api.moonshot.cn/v1/chat/completions';
 
 export async function POST(req: Request) {
   try {
@@ -49,10 +22,10 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!process.env.OPENAI_API_KEY) {
-      console.error('OpenAI API key is not configured');
+    if (!process.env.MOONSHOT_API_KEY) {
+      console.error('Moonshot API key is not configured');
       return NextResponse.json(
-        { error: 'OpenAI API key is not configured' },
+        { error: 'Moonshot API key is not configured' },
         { status: 500 }
       );
     }
@@ -64,40 +37,79 @@ export async function POST(req: Request) {
     const totalHours = totalDays * dailyHours;
     const hoursPerSubject = Math.floor(totalHours / subjects.length);
 
-    const prompt = `请为以下学习计划生成任务列表：
-科目：${subjects.join('、')}
-总天数：${totalDays}天
-每日学习时长：${dailyHours}小时
-每科目总时长：${hoursPerSubject}小时
+    const prompt = `你是一个学习计划生成器。请根据以下信息生成学习任务列表，并只返回一个有效的 JSON 数组，不要包含任何其他文字说明。
 
-请生成${subjects.length * 3}个任务，每个任务2小时。
-返回格式：
+输入信息：
+- 科目：${subjects.join('、')}
+- 总天数：${totalDays}天
+- 每日学习时长：${dailyHours}小时
+- 每科目总时长：${hoursPerSubject}小时
+
+要求：
+1. 生成${subjects.length * 3}个任务
+2. 每个任务时长为2小时
+3. 任务日期从${startDate}开始，每天一个任务
+4. 返回格式必须是严格的 JSON 数组
+
+返回格式示例：
 [
   {
-    "id": "任务1",
-    "subject": "科目",
+    "id": "task-1",
+    "subject": "数学",
     "description": "学习内容",
     "duration": 2,
-    "date": "YYYY-MM-DD",
+    "date": "2024-03-20",
     "completed": false
   }
-]`;
+]
 
-    console.log('Sending request to OpenAI...');
+请直接返回 JSON 数组，不要包含任何其他文字。`;
+
+    console.log('Sending request to Moonshot API...');
     try {
-      const completion = await generatePlanWithRetry(prompt);
-      console.log('Received response from OpenAI');
+      const response = await fetch(MOONSHOT_API_URL, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${process.env.MOONSHOT_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: 'moonshot-v1-8k',
+          messages: [{ role: 'user', content: prompt }],
+          temperature: 0.7,
+          max_tokens: 1000,
+        }),
+        agent,
+      });
+
+      console.log('Moonshot API response status:', response.status);
       
-      const content = completion.choices[0].message.content;
-      if (!content) {
-        throw new Error('No content received from OpenAI');
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        console.error('Moonshot API error response:', errorData);
+        throw new Error(errorData.error?.message || `Moonshot API request failed with status ${response.status}`);
       }
 
-      console.log('Parsing response...');
-      const tasks = JSON.parse(content);
+      const data = await response.json();
+      console.log('Moonshot API response data:', data);
+      
+      if (!data.choices?.[0]?.message?.content) {
+        throw new Error('Invalid response format from Moonshot API');
+      }
+
+      const content = data.choices[0].message.content;
+      console.log('Parsing content:', content);
+      
+      // 尝试提取 JSON 部分
+      const jsonMatch = content.match(/\[[\s\S]*\]/);
+      if (!jsonMatch) {
+        throw new Error('No JSON array found in response');
+      }
+      
+      const tasks = JSON.parse(jsonMatch[0]);
 
       if (!Array.isArray(tasks)) {
-        throw new Error('Invalid response format from OpenAI');
+        throw new Error('Invalid response format from Moonshot API: expected an array of tasks');
       }
 
       // 确保每个任务都有正确的格式
@@ -112,15 +124,15 @@ export async function POST(req: Request) {
 
       console.log('Successfully generated tasks:', formattedTasks.length);
       return NextResponse.json({ tasks: formattedTasks });
-    } catch (openaiError) {
-      console.error('OpenAI API error:', openaiError);
-      if (openaiError instanceof Error) {
+    } catch (error) {
+      console.error('Moonshot API error:', error);
+      if (error instanceof Error) {
         return NextResponse.json(
-          { error: `OpenAI API error: ${openaiError.message}` },
+          { error: `Moonshot API error: ${error.message}` },
           { status: 500 }
         );
       }
-      throw openaiError;
+      throw error;
     }
   } catch (error) {
     console.error('Error generating plan:', error);
