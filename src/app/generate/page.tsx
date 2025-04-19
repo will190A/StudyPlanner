@@ -25,7 +25,7 @@ const subjects = [
 export default function GeneratePage() {
   const router = useRouter()
   const { user, isAuthenticated } = useAuthStore()
-  const { savePlan, updatePlan, isLoading, error } = usePlanStore()
+  const { savePlan, updatePlan, isLoading: isPlanLoading, error } = usePlanStore()
   const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
   const [startDate, setStartDate] = useState<Date>(new Date())
   const [endDate, setEndDate] = useState<Date>(() => {
@@ -35,6 +35,8 @@ export default function GeneratePage() {
   })
   const [dailyHours, setDailyHours] = useState(2)
   const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isGenerating, setIsGenerating] = useState(false)
+  const [errorMessage, setError] = useState<string | null>(null)
 
   useEffect(() => {
     if (!isAuthenticated) {
@@ -42,66 +44,69 @@ export default function GeneratePage() {
     }
   }, [isAuthenticated, router])
 
-  const generateTasks = () => {
-    const tasks = []
-    const days = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24))
-    const hoursPerSubject = (dailyHours * days) / selectedSubjects.length
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setIsGenerating(true)
+    setError(null)
 
-    selectedSubjects.forEach((subject) => {
-      const subjectHours = Math.ceil(hoursPerSubject)
-      const tasksPerSubject = Math.ceil(subjectHours / 2) // 每个任务2小时
-
-      for (let i = 0; i < tasksPerSubject; i++) {
-        const date = new Date(startDate)
-        date.setDate(date.getDate() + Math.floor((i * days) / tasksPerSubject))
-        
-        tasks.push({
-          id: `${subject}-${i}`,
-          date: date.toISOString().split('T')[0],
-          subject,
-          description: `${subject} 学习任务 ${i + 1}`,
-          duration: 2,
-          completed: false,
-        })
-      }
-    })
-
-    return tasks
-  }
-
-  const handleSubmit = async () => {
-    if (selectedSubjects.length === 0) {
-      return
-    }
-
-    setIsSubmitting(true)
     try {
-      const tasks = generateTasks()
-      const plan = {
-        userId: user?.id,
+      console.log('Starting plan generation...')
+      // 生成 AI 计划
+      const response = await fetch('/api/generate-plan', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          subjects: selectedSubjects,
+          startDate: startDate.toISOString().split('T')[0],
+          endDate: endDate.toISOString().split('T')[0],
+          dailyHours,
+        }),
+      });
+
+      const data = await response.json()
+      
+      if (!response.ok) {
+        throw new Error(data.error || '生成计划失败')
+      }
+
+      console.log('Plan generated, saving...')
+      const { tasks } = data
+
+      // 保存计划
+      const result = await savePlan({
+        userId: user?.id || '',
         subjects: selectedSubjects,
         startDate: startDate.toISOString().split('T')[0],
         endDate: endDate.toISOString().split('T')[0],
         dailyHours,
-        tasks,
-      }
+        tasks
+      })
 
-      const result = await savePlan(plan)
-      if (result.success) {
-        router.push('/plan')
+      if (result.success && result.data) {
+        console.log('Plan saved, redirecting...')
+        // 跳转到新创建的计划页面
+        router.push(`/plan?id=${result.data.id}`)
       } else {
-        console.error('Failed to save plan:', result.error)
+        throw new Error(result.error || '保存计划失败')
       }
+    } catch (error) {
+      console.error('Error in handleSubmit:', error)
+      setError(error instanceof Error ? error.message : '创建计划时发生错误')
     } finally {
-      setIsSubmitting(false)
+      setIsGenerating(false)
     }
   }
 
   return (
     <div className="container mx-auto p-4">
-      {error && (
+      {errorMessage && (
         <Alert variant="destructive" className="mb-4">
-          <AlertDescription>{error}</AlertDescription>
+          <AlertDescription className="flex items-center">
+            <span className="mr-2">⚠️</span>
+            {errorMessage}
+          </AlertDescription>
         </Alert>
       )}
 
@@ -125,7 +130,7 @@ export default function GeneratePage() {
                         setSelectedSubjects([...selectedSubjects, subject])
                       }
                     }}
-                    disabled={isLoading || isSubmitting}
+                    disabled={isGenerating || isSubmitting}
                   >
                     {subject}
                   </Button>
@@ -139,7 +144,7 @@ export default function GeneratePage() {
                 <DatePicker
                   date={startDate}
                   setDate={setStartDate}
-                  disabled={isLoading || isSubmitting}
+                  disabled={isGenerating || isSubmitting}
                 />
               </div>
               <div>
@@ -147,7 +152,7 @@ export default function GeneratePage() {
                 <DatePicker
                   date={endDate}
                   setDate={setEndDate}
-                  disabled={isLoading || isSubmitting}
+                  disabled={isGenerating || isSubmitting}
                 />
               </div>
             </div>
@@ -161,7 +166,7 @@ export default function GeneratePage() {
                   min={1}
                   max={8}
                   step={0.5}
-                  disabled={isLoading || isSubmitting}
+                  disabled={isGenerating || isSubmitting}
                 />
                 <span className="text-sm font-medium">{dailyHours} 小时</span>
               </div>
@@ -170,13 +175,13 @@ export default function GeneratePage() {
             <div className="flex justify-end">
               <Button
                 onClick={handleSubmit}
-                disabled={selectedSubjects.length === 0 || isLoading || isSubmitting}
+                disabled={selectedSubjects.length === 0 || isGenerating || isSubmitting}
               >
-                {isSubmitting ? (
-                  <>
+                {isGenerating ? (
+                  <div className="flex items-center">
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    生成中...
-                  </>
+                    正在生成计划...
+                  </div>
                 ) : (
                   '生成学习计划'
                 )}
