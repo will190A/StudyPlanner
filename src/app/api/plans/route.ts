@@ -31,12 +31,20 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const userId = searchParams.get('userId');
     
+    if (!userId) {
+      return NextResponse.json(
+        { error: 'User ID is required' },
+        { status: 400 }
+      );
+    }
+    
     await connectDB();
     
     const plans = await StudyPlan.find({ userId });
     
     return NextResponse.json(plans);
   } catch (error) {
+    console.error('Error fetching plans:', error);
     return NextResponse.json(
       { error: 'Error fetching study plans' },
       { status: 500 }

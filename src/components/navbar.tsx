@@ -1,70 +1,34 @@
 'use client'
 
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/store'
-import { Button } from '@/components/ui/button'
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
-import { LogOut, User } from 'lucide-react'
-import { useEffect } from 'react'
+import Link from "next/link"
+import { Button } from "@/components/ui/button"
+import { useAuthStore } from "@/lib/store"
+import { useRouter } from "next/navigation"
 
-export default function Navbar() {
+export function Navbar() {
+  const { user, logout } = useAuthStore()
   const router = useRouter()
-  const { user, isAuthenticated, logout } = useAuthStore()
-
-  useEffect(() => {
-    if (isAuthenticated && window.location.pathname === '/') {
-      router.push('/plans')
-    }
-  }, [isAuthenticated, router])
 
   const handleLogout = () => {
     logout()
-    router.push('/login')
+    router.push("/")
   }
 
-  if (!isAuthenticated) {
-    return null
-  }
+  if (!user) return null
 
   return (
     <nav className="border-b">
-      <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <div className="flex items-center space-x-4">
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/plans')}
-              className="text-lg font-semibold"
-            >
-              学习计划
-            </Button>
-            <Button
-              variant="ghost"
-              onClick={() => router.push('/generate')}
-            >
-              创建计划
-            </Button>
-          </div>
-
-          <div className="flex items-center space-x-4">
-            <div className="flex items-center space-x-2">
-              <Avatar>
-                <AvatarImage src={`https://api.dicebear.com/7.x/initials/svg?seed=${user?.name}`} />
-                <AvatarFallback>
-                  <User className="h-5 w-5" />
-                </AvatarFallback>
-              </Avatar>
-              <span className="text-sm font-medium">{user?.name}</span>
-            </div>
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={handleLogout}
-              title="退出登录"
-            >
-              <LogOut className="h-5 w-5" />
-            </Button>
-          </div>
+      <div className="container mx-auto px-4 h-16 flex items-center justify-between">
+        <div className="flex items-center gap-6">
+          <Link href="/plans" className="font-semibold">
+            学习计划
+          </Link>
+        </div>
+        <div className="flex items-center gap-4">
+          <span className="text-sm text-gray-600">{user.name}</span>
+          <Button variant="outline" size="sm" onClick={handleLogout}>
+            退出登录
+          </Button>
         </div>
       </div>
     </nav>

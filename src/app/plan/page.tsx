@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { useAuthStore, usePlanStore } from '@/lib/store'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
@@ -12,17 +12,52 @@ import { Loader2 } from 'lucide-react'
 
 export default function PlanPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { user, isAuthenticated } = useAuthStore()
-  const { currentPlan, updateTask, deletePlan, isLoading, error } = usePlanStore()
+  const { currentPlan, updateTask, deletePlan, isLoading, error, fetchPlans } = usePlanStore()
   const [isDeleting, setIsDeleting] = useState(false)
+  const [isLoadingPlan, setIsLoadingPlan] = useState(true)
 
   useEffect(() => {
     if (!isAuthenticated) {
       router.push('/login')
+      return
     }
-  }, [isAuthenticated, router])
+
+    const loadPlan = async () => {
+      if (user) {
+        const planId = searchParams.get('id')
+        if (!planId) {
+          router.push('/plans')
+          return
+        }
+
+        const result = await fetchPlans(user.id)
+        if (result.success && result.data) {
+          const plan = result.data.find(p => (p._id === planId || p.id === planId))
+          if (plan) {
+            const planWithId = {
+              ...plan,
+              id: plan._id || plan.id
+            };
+            usePlanStore.getState().setPlan(planWithId)
+          } else {
+            router.push('/plans')
+          }
+        }
+        setIsLoadingPlan(false)
+      }
+    }
+
+    loadPlan()
+  }, [isAuthenticated, router, user, fetchPlans, searchParams])
 
   const handleTaskToggle = async (taskId: string, completed: boolean) => {
+    if (!currentPlan) {
+      console.error('No current plan found')
+      return
+    }
+    
     const result = await updateTask(taskId, completed)
     if (!result.success) {
       console.error('Failed to update task:', result.error)
@@ -40,13 +75,21 @@ export default function PlanPage() {
     try {
       const result = await deletePlan(currentPlan.id)
       if (result.success) {
-        router.push('/')
+        router.push('/plans')
       } else {
         console.error('Failed to delete plan:', result.error)
       }
     } finally {
       setIsDeleting(false)
     }
+  }
+
+  if (isLoadingPlan) {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
   }
 
   if (!currentPlan) {
@@ -57,9 +100,9 @@ export default function PlanPage() {
             <CardTitle>没有找到学习计划</CardTitle>
           </CardHeader>
           <CardContent>
-            <p>请创建一个新的学习计划或选择一个现有的计划。</p>
-            <Button onClick={() => router.push('/generate')} className="mt-4">
-              创建新计划
+            <p>请选择一个现有的计划。</p>
+            <Button onClick={() => router.push('/plans')} className="mt-4">
+              返回计划列表
             </Button>
           </CardContent>
         </Card>

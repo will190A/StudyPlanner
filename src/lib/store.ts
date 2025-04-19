@@ -88,6 +88,10 @@ export const usePlanStore = create<PlanState>()(
           return { success: false, error: 'No plan found' };
         }
 
+        if (!currentPlan.id) {
+          return { success: false, error: 'Plan ID is missing' };
+        }
+
         // 乐观更新
         const updatedPlan = {
           ...currentPlan,

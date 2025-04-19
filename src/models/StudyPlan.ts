@@ -17,6 +17,14 @@ const studyPlanSchema = new mongoose.Schema({
   dailyHours: Number,
   tasks: [taskSchema],
   createdAt: { type: Date, default: Date.now },
+}, {
+  toJSON: {
+    transform: function(doc, ret) {
+      ret.id = ret._id.toString();
+      delete ret._id;
+      delete ret.__v;
+    }
+  }
 });
 
 export default mongoose.models.StudyPlan || mongoose.model('StudyPlan', studyPlanSchema); 
