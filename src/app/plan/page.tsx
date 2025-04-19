@@ -38,8 +38,9 @@ export default function PlanPage() {
           if (plan) {
             const planWithId = {
               ...plan,
-              id: plan._id || plan.id
-            };
+              id: plan._id || plan.id,
+              _id: plan._id || plan.id
+            }
             usePlanStore.getState().setPlan(planWithId)
           } else {
             router.push('/plans')
@@ -57,10 +58,20 @@ export default function PlanPage() {
       console.error('No current plan found')
       return
     }
+
+    const planId = currentPlan._id || currentPlan.id
+    if (!planId) {
+      console.error('Plan ID is missing')
+      return
+    }
     
-    const result = await updateTask(taskId, completed)
-    if (!result.success) {
-      console.error('Failed to update task:', result.error)
+    try {
+      const result = await updateTask(taskId, completed)
+      if (!result.success) {
+        console.error('Failed to update task:', result.error)
+      }
+    } catch (error) {
+      console.error('Error updating task:', error)
     }
   }
 

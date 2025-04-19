@@ -46,6 +46,7 @@ export const useAuthStore = create<AuthState>()((set) => ({
 
 interface StudyPlan {
   id: string
+  _id?: string
   userId: string
   subjects: string[]
   startDate: string
@@ -88,22 +89,13 @@ export const usePlanStore = create<PlanState>()(
           return { success: false, error: 'No plan found' };
         }
 
-        if (!currentPlan.id) {
+        const planId = currentPlan._id || currentPlan.id;
+        if (!planId) {
           return { success: false, error: 'Plan ID is missing' };
         }
 
-        // 乐观更新
-        const updatedPlan = {
-          ...currentPlan,
-          tasks: currentPlan.tasks.map((task) =>
-            task.id === taskId ? { ...task, completed } : task
-          ),
-        };
-        set({ currentPlan: updatedPlan, error: null });
-
         try {
-          set({ isLoading: true });
-          const response = await fetch(`/api/plans/${currentPlan.id}/tasks/${taskId}`, {
+          const response = await fetch(`/api/plans/${planId}/tasks/${taskId}`, {
             method: 'PATCH',
             headers: {
               'Content-Type': 'application/json',
@@ -111,22 +103,21 @@ export const usePlanStore = create<PlanState>()(
             body: JSON.stringify({ completed }),
           });
 
-          const data = await response.json();
-
           if (!response.ok) {
-            // 如果请求失败，回滚到原始状态
-            set({ currentPlan, error: data.error });
+            const data = await response.json();
             return { success: false, error: data.error };
           }
 
-          set({ currentPlan: data, error: null });
+          const data = await response.json();
+          
+          // 更新当前计划
+          set((state) => ({
+            currentPlan: data
+          }));
+          
           return { success: true };
         } catch (error) {
-          // 如果请求失败，回滚到原始状态
-          set({ currentPlan, error: 'Failed to update task' });
           return { success: false, error: 'Failed to update task' };
-        } finally {
-          set({ isLoading: false });
         }
       },
       savePlan: async (plan) => {

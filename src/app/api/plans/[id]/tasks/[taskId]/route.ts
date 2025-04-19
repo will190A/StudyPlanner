@@ -32,6 +32,7 @@ export async function PATCH(
     
     return NextResponse.json(plan);
   } catch (error) {
+    console.error('Error updating task:', error);
     return NextResponse.json(
       { error: 'Error updating task' },
       { status: 500 }

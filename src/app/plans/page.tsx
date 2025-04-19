@@ -73,58 +73,63 @@ export default function PlansPage() {
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {plans.map((plan) => (
-            <Card
-              key={plan.id}
-              className="cursor-pointer hover:shadow-lg transition-shadow"
-              onClick={() => {
-                const planWithId = {
-                  ...plan,
-                  id: plan._id || plan.id
-                };
-                usePlanStore.getState().setPlan(planWithId);
-                router.push(`/plan?id=${planWithId.id}`);
-              }}
-            >
-              <CardHeader>
-                <CardTitle className="text-lg">
-                  {Array.isArray(plan.subjects) ? plan.subjects.join('、') : '未设置科目'}
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div>
-                    <div className="flex justify-between mb-2">
-                      <span>总体进度</span>
-                      <span>{Math.round(calculateProgress(plan.tasks))}%</span>
-                    </div>
-                    <Progress value={calculateProgress(plan.tasks)} className="h-2" />
-                  </div>
-                  <div className="grid grid-cols-2 gap-4">
+          {plans.map((plan) => {
+            const planId = plan._id || plan.id
+            if (!planId) return null
+            
+            return (
+              <Card
+                key={planId}
+                className="cursor-pointer hover:shadow-lg transition-shadow"
+                onClick={() => {
+                  const planWithId = {
+                    ...plan,
+                    id: planId
+                  }
+                  usePlanStore.getState().setPlan(planWithId)
+                  router.push(`/plan?id=${planId}`)
+                }}
+              >
+                <CardHeader>
+                  <CardTitle className="text-lg">
+                    {Array.isArray(plan.subjects) ? plan.subjects.join('、') : '未设置科目'}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
                     <div>
-                      <p className="text-sm text-gray-500">总任务数</p>
-                      <p className="text-2xl font-bold">
-                        {Array.isArray(plan.tasks) ? plan.tasks.length : 0}
-                      </p>
+                      <div className="flex justify-between mb-2">
+                        <span>总体进度</span>
+                        <span>{Math.round(calculateProgress(plan.tasks))}%</span>
+                      </div>
+                      <Progress value={calculateProgress(plan.tasks)} className="h-2" />
                     </div>
-                    <div>
-                      <p className="text-sm text-gray-500">已完成任务</p>
-                      <p className="text-2xl font-bold">
-                        {Array.isArray(plan.tasks) 
-                          ? plan.tasks.filter((task: any) => task.completed).length 
-                          : 0}
-                      </p>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <p className="text-sm text-gray-500">总任务数</p>
+                        <p className="text-2xl font-bold">
+                          {Array.isArray(plan.tasks) ? plan.tasks.length : 0}
+                        </p>
+                      </div>
+                      <div>
+                        <p className="text-sm text-gray-500">已完成任务</p>
+                        <p className="text-2xl font-bold">
+                          {Array.isArray(plan.tasks) 
+                            ? plan.tasks.filter((task: any) => task.completed).length 
+                            : 0}
+                        </p>
+                      </div>
+                    </div>
+                    <div className="text-sm text-gray-500">
+                      <p>开始日期：{plan.startDate ? new Date(plan.startDate).toLocaleDateString() : '未设置'}</p>
+                      <p>结束日期：{plan.endDate ? new Date(plan.endDate).toLocaleDateString() : '未设置'}</p>
+                      <p>每日学习时长：{plan.dailyHours || 0} 小时</p>
                     </div>
                   </div>
-                  <div className="text-sm text-gray-500">
-                    <p>开始日期：{plan.startDate ? new Date(plan.startDate).toLocaleDateString() : '未设置'}</p>
-                    <p>结束日期：{plan.endDate ? new Date(plan.endDate).toLocaleDateString() : '未设置'}</p>
-                    <p>每日学习时长：{plan.dailyHours || 0} 小时</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
+                </CardContent>
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>
