@@ -1,9 +1,13 @@
 {
-  "/register/page": "app/register/page.js",
-  "/generate/page": "app/generate/page.js",
-  "/plan/page": "app/plan/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/page": "app/page.js",
-  "/api/generate-plan/route": "app/api/generate-plan/route.js",
+  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/login/page": "app/login/page.js",
   "/api/plans/route": "app/api/plans/route.js",
+  "/practice/page": "app/practice/page.js",
+  "/dashboard/page": "app/dashboard/page.js",
+  "/reports/page": "app/reports/page.js",
+  "/mistakes/page": "app/mistakes/page.js",
+  "/daily/page": "app/daily/page.js",
   "/plans/page": "app/plans/page.js"
 }

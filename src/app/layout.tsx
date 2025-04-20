@@ -1,22 +1,22 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { Navbar } from '@/components/navbar'
+import Navbar from '@/components/Navbar'
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: '学习计划助手',
-  description: '帮助你制定和管理学习计划的工具',
+  title: 'StudyPlanner',
+  description: 'Your personal study planning assistant',
 }
 
 export default function RootLayout({
   children,
-}: {
-  children: React.ReactNode
-}) {
+}: Readonly<{
+  children: React.ReactNode;
+}>) {
   return (
-    <html lang="zh">
+    <html lang="en">
       <body className={inter.className}>
         <Navbar />
         <main className="min-h-screen bg-gray-50">
