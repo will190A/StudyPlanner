@@ -1,12 +1,9 @@
 {
-  "/login/page": "app/login/page.js",
   "/register/page": "app/register/page.js",
-  "/api/plans/route": "app/api/plans/route.js",
   "/generate/page": "app/generate/page.js",
-  "/api/generate-plan/route": "app/api/generate-plan/route.js",
   "/plan/page": "app/plan/page.js",
-  "/api/plans/[id]/tasks/[taskId]/route": "app/api/plans/[id]/tasks/[taskId]/route.js",
   "/page": "app/page.js",
-  "/api/auth/login/route": "app/api/auth/login/route.js",
+  "/api/generate-plan/route": "app/api/generate-plan/route.js",
+  "/api/plans/route": "app/api/plans/route.js",
   "/plans/page": "app/plans/page.js"
 }

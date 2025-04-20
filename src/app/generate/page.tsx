@@ -10,23 +10,35 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Slider } from '@/components/ui/slider'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { cn } from '@/lib/utils'
 
-const subjects = [
-  '数学',
-  '英语',
-  '物理',
-  '化学',
-  '生物',
-  '历史',
-  '地理',
-  '政治',
-]
+interface Task {
+  id: string
+  date: string
+  subject: string
+  description: string
+  duration: number
+  completed: boolean
+}
+
+interface StudyPlan {
+  id: string
+  _id?: string
+  userId: string
+  subjects: string[]
+  startDate: string
+  endDate: string
+  dailyHours: number
+  tasks: Task[]
+}
 
 export default function GeneratePage() {
   const router = useRouter()
   const { user, isAuthenticated } = useAuthStore()
   const { savePlan, updatePlan, isLoading: isPlanLoading, error } = usePlanStore()
-  const [selectedSubjects, setSelectedSubjects] = useState<string[]>([])
+  const [subjectsInput, setSubjectsInput] = useState('')
   const [startDate, setStartDate] = useState<Date>(new Date())
   const [endDate, setEndDate] = useState<Date>(() => {
     const date = new Date()
@@ -49,6 +61,18 @@ export default function GeneratePage() {
     setIsGenerating(true)
     setError(null)
 
+    // 将输入的科目字符串转换为数组
+    const subjects = subjectsInput
+      .split(/[,，、\n]/) // 支持逗号、中文逗号、顿号、换行作为分隔符
+      .map(subject => subject.trim())
+      .filter(subject => subject.length > 0)
+
+    if (subjects.length === 0) {
+      setError('请输入至少一个科目')
+      setIsGenerating(false)
+      return
+    }
+
     try {
       console.log('Starting plan generation...')
       // 生成 AI 计划
@@ -58,7 +82,7 @@ export default function GeneratePage() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          subjects: selectedSubjects,
+          subjects,
           startDate: startDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
           endDate: endDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
           dailyHours,
@@ -75,19 +99,22 @@ export default function GeneratePage() {
       const { tasks } = data
 
       // 保存计划
-      const result = await savePlan({
+      const plan: StudyPlan = {
+        id: '', // 服务器会生成id
         userId: user?.id || '',
-        subjects: selectedSubjects,
+        subjects,
         startDate: startDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
         endDate: endDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
         dailyHours,
         tasks
-      })
+      }
+
+      const result = await savePlan(plan)
 
       console.log('Save plan result:', result)
 
-      if (result.success && result.data) {
-        console.log('Plan saved successfully:', result.data)
+      if (result.success) {
+        console.log('Plan saved successfully')
         // 跳转到全部学习计划页面
         router.push('/plans')
       } else {
@@ -120,43 +147,37 @@ export default function GeneratePage() {
         <CardContent>
           <div className="space-y-6">
             <div>
-              <Label>选择科目</Label>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-2">
-                {subjects.map((subject) => (
-                  <Button
-                    key={subject}
-                    variant={selectedSubjects.includes(subject) ? 'default' : 'outline'}
-                    onClick={() => {
-                      if (selectedSubjects.includes(subject)) {
-                        setSelectedSubjects(selectedSubjects.filter((s) => s !== subject))
-                      } else {
-                        setSelectedSubjects([...selectedSubjects, subject])
-                      }
-                    }}
-                    disabled={isGenerating || isSubmitting}
-                  >
-                    {subject}
-                  </Button>
-                ))}
-              </div>
+              <Label>输入科目</Label>
+              <Textarea
+                placeholder="请输入要学习的科目，用逗号、顿号或换行分隔。例如：&#10;数学&#10;英语&#10;物理&#10;化学"
+                value={subjectsInput}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => setSubjectsInput(e.target.value)}
+                className="mt-2 min-h-[100px]"
+                disabled={isGenerating || isSubmitting}
+              />
+              <p className="text-sm text-muted-foreground mt-1">
+                提示：可以输入多个科目，用逗号、顿号或换行分隔
+              </p>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label>开始日期</Label>
-                <DatePicker
-                  date={startDate}
-                  setDate={setStartDate}
-                  disabled={isGenerating || isSubmitting}
-                />
+                <div className={cn(isGenerating || isSubmitting ? "opacity-50" : "")}>
+                  <DatePicker
+                    date={startDate}
+                    setDate={(date: Date | undefined) => date && setStartDate(date)}
+                  />
+                </div>
               </div>
               <div>
                 <Label>结束日期</Label>
-                <DatePicker
-                  date={endDate}
-                  setDate={setEndDate}
-                  disabled={isGenerating || isSubmitting}
-                />
+                <div className={cn(isGenerating || isSubmitting ? "opacity-50" : "")}>
+                  <DatePicker
+                    date={endDate}
+                    setDate={(date: Date | undefined) => date && setEndDate(date)}
+                  />
+                </div>
               </div>
             </div>
 
@@ -178,7 +199,7 @@ export default function GeneratePage() {
             <div className="flex justify-end">
               <Button
                 onClick={handleSubmit}
-                disabled={selectedSubjects.length === 0 || isGenerating || isSubmitting}
+                disabled={!subjectsInput.trim() || isGenerating || isSubmitting}
               >
                 {isGenerating ? (
                   <div className="flex items-center">
