@@ -420,15 +420,15 @@ export default function PracticePage({ params }: { params: { id: string } }) {
               >
                 <ArrowLeft className="h-4 w-4" />
               </Button>
-              <h1 className="text-2xl font-bold text-gray-900">{practice.title}</h1>
+              <h1 className="text-2xl font-bold text-gray-900 select-none">{practice.title}</h1>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center text-gray-600">
+              <div className="flex items-center text-gray-600 select-none pointer-events-none">
                 <Clock className="h-4 w-4 mr-1" />
                 <span>{formatTime(elapsedTime)}</span>
               </div>
               {isCompleted && (
-                <div className="flex items-center text-green-600">
+                <div className="flex items-center text-green-600 select-none pointer-events-none">
                   <Check className="h-4 w-4 mr-1" />
                   <span>正确率: {practice?.accuracy ? practice.accuracy.toFixed(1) : calculateAccuracy().toFixed(1)}%</span>
                 </div>
@@ -534,27 +534,27 @@ export default function PracticePage({ params }: { params: { id: string } }) {
           {isCompleted && (
             <Card className="mt-8">
               <CardHeader>
-                <CardTitle>练习结果</CardTitle>
+                <CardTitle className="select-none">练习结果</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                   <div className="p-4 bg-green-50 rounded-md">
-                    <div className="text-sm text-green-600">正确题数</div>
-                    <div className="text-2xl font-bold text-green-700">
+                    <div className="text-sm text-green-600 select-none">正确题数</div>
+                    <div className="text-2xl font-bold text-green-700 select-none">
                       {practice.correctCount} / {practice.totalQuestions}
                     </div>
                   </div>
                   
                   <div className="p-4 bg-blue-50 rounded-md">
-                    <div className="text-sm text-blue-600">正确率</div>
-                    <div className="text-2xl font-bold text-blue-700">
+                    <div className="text-sm text-blue-600 select-none">正确率</div>
+                    <div className="text-2xl font-bold text-blue-700 select-none">
                       {practice?.accuracy ? practice.accuracy.toFixed(1) : calculateAccuracy().toFixed(1)}%
                     </div>
                   </div>
                   
                   <div className="p-4 bg-purple-50 rounded-md">
-                    <div className="text-sm text-purple-600">用时</div>
-                    <div className="text-2xl font-bold text-purple-700">
+                    <div className="text-sm text-purple-600 select-none">用时</div>
+                    <div className="text-2xl font-bold text-purple-700 select-none">
                       {formatTime(elapsedTime)}
                     </div>
                   </div>

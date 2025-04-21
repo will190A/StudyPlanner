@@ -75,7 +75,7 @@ export default function QuestionCard({
   return (
     <Card className="mb-6">
       <CardHeader>
-        <CardTitle className="flex items-center justify-between text-lg font-semibold">
+        <CardTitle className="flex items-center justify-between text-lg font-semibold select-none">
           <div>
             {type === 'choice' && <span className="badge bg-blue-100 text-blue-800 text-xs py-1 px-2 rounded-full mr-2">单选题</span>}
             {type === 'multiple' && <span className="badge bg-purple-100 text-purple-800 text-xs py-1 px-2 rounded-full mr-2">多选题</span>}
@@ -101,7 +101,7 @@ export default function QuestionCard({
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          <div className="text-gray-700 whitespace-pre-line">{content}</div>
+          <div className="text-gray-700 whitespace-pre-line select-none">{content}</div>
           
           {/* 根据题目类型显示不同的答题界面 */}
           {type === 'choice' && options && options.length > 0 && (
@@ -120,13 +120,14 @@ export default function QuestionCard({
                     />
                     <Label 
                       htmlFor={`${id}-${option.label}`}
-                      className={
-                        isRevealed && correctAnswer === option.label 
+                      className={`
+                        ${isRevealed && correctAnswer === option.label 
                           ? 'text-green-600 font-medium' 
                           : isRevealed && userAnswer === option.label && isCorrect === false
                             ? 'text-red-600 font-medium'
-                            : ''
-                      }
+                            : ''}
+                        select-none
+                      `}
                     >
                       {option.label}. {option.text}
                     </Label>
@@ -150,14 +151,15 @@ export default function QuestionCard({
                   />
                   <Label 
                     htmlFor={`${id}-${option.label}`}
-                    className={
-                      isRevealed && Array.isArray(correctAnswer) && correctAnswer.includes(option.label)
+                    className={`
+                      ${isRevealed && Array.isArray(correctAnswer) && correctAnswer.includes(option.label)
                         ? 'text-green-600 font-medium'
                         : isRevealed && Array.isArray(userAnswer) && userAnswer.includes(option.label) && 
                           Array.isArray(correctAnswer) && !correctAnswer.includes(option.label)
                           ? 'text-red-600 font-medium'
-                          : ''
-                    }
+                          : ''}
+                      select-none
+                    `}
                   >
                     {option.label}. {option.text}
                   </Label>
@@ -177,13 +179,14 @@ export default function QuestionCard({
                   <RadioGroupItem value="true" id={`${id}-true`} disabled={disabled} />
                   <Label 
                     htmlFor={`${id}-true`}
-                    className={
-                      isRevealed && correctAnswer === 'true'
+                    className={`
+                      ${isRevealed && correctAnswer === 'true'
                         ? 'text-green-600 font-medium'
                         : isRevealed && userAnswer === 'true' && userAnswer !== correctAnswer
                           ? 'text-red-600 font-medium'
-                          : ''
-                    }
+                          : ''}
+                      select-none
+                    `}
                   >
                     正确
                   </Label>
@@ -192,13 +195,14 @@ export default function QuestionCard({
                   <RadioGroupItem value="false" id={`${id}-false`} disabled={disabled} />
                   <Label 
                     htmlFor={`${id}-false`}
-                    className={
-                      isRevealed && correctAnswer === 'false'
+                    className={`
+                      ${isRevealed && correctAnswer === 'false'
                         ? 'text-green-600 font-medium'
                         : isRevealed && userAnswer === 'false' && userAnswer !== correctAnswer
                           ? 'text-red-600 font-medium'
-                          : ''
-                    }
+                          : ''}
+                      select-none
+                    `}
                   >
                     错误
                   </Label>
@@ -220,8 +224,8 @@ export default function QuestionCard({
           {/* 显示解析 */}
           {isRevealed && explanation && (
             <div className="mt-4 p-4 bg-blue-50 rounded-md">
-              <h4 className="font-semibold text-blue-900">答案解析：</h4>
-              <div className="text-blue-800 mt-1 whitespace-pre-line">{explanation}</div>
+              <h4 className="font-semibold text-blue-900 select-none">答案解析：</h4>
+              <div className="text-blue-800 mt-1 whitespace-pre-line select-none">{explanation}</div>
             </div>
           )}
         </div>
