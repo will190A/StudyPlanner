@@ -1,13 +1,176 @@
 'use client'
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import Navbar from '@/components/Navbar';
-import { CheckCircle2, Target, BookOpen, History, Star, TrendingUp } from 'lucide-react';
+import { CheckCircle2, Target, BookOpen, History, Star, TrendingUp, Database, Code, Network, Server, Globe, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+interface Category {
+  name: string;
+  icon: JSX.Element;
+  description: string;
+}
 
 export default function Practice() {
   const router = useRouter();
+  const { data: session } = useSession();
+  
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
+  const [recentPractices, setRecentPractices] = useState<any[]>([]);
+  const [mistakeCount, setMistakeCount] = useState(0);
+  
+  // 题目分类
+  const categories: Category[] = [
+    { name: "数据结构", icon: <Database className="w-4 h-4 mr-2" />, description: "包含栈、队列、树、图等数据结构题目" },
+    { name: "算法", icon: <Code className="w-4 h-4 mr-2" />, description: "包含排序、搜索、动态规划等算法题目" },
+    { name: "计算机网络", icon: <Network className="w-4 h-4 mr-2" />, description: "包含TCP/IP、HTTP等网络协议题目" },
+    { name: "操作系统", icon: <Server className="w-4 h-4 mr-2" />, description: "包含进程管理、内存管理等操作系统题目" },
+    { name: "编程语言", icon: <Code className="w-4 h-4 mr-2" />, description: "包含Java、Python等编程语言题目" },
+    { name: "数据库", icon: <Database className="w-4 h-4 mr-2" />, description: "包含SQL、索引、事务等数据库题目" }
+  ];
+  
+  // 获取练习记录和错题数量
+  useEffect(() => {
+    if (session) {
+      fetchRecentPractices();
+      fetchMistakeCount();
+    }
+  }, [session]);
+  
+  // 获取最近练习记录
+  const fetchRecentPractices = async () => {
+    try {
+      const response = await fetch('/api/practices?limit=2');
+      if (response.ok) {
+        const data = await response.json();
+        setRecentPractices(data.practices || []);
+      }
+    } catch (error) {
+      console.error('获取练习记录失败:', error);
+    }
+  };
+  
+  // 获取错题数量
+  const fetchMistakeCount = async () => {
+    try {
+      const response = await fetch('/api/mistakes?limit=1');
+      if (response.ok) {
+        const data = await response.json();
+        setMistakeCount(data.pagination?.total || 0);
+      }
+    } catch (error) {
+      console.error('获取错题数量失败:', error);
+    }
+  };
+  
+  // 创建分类练习
+  const createCategoryPractice = async (category: string) => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // 使用默认用户ID
+      const defaultUserId = '6804c5d6112eb76d7c0ec957';
+      
+      const response = await fetch('/api/practices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'category',
+          category,
+          count: 5, // 每次练习5题
+          userId: defaultUserId // 添加默认用户ID
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('创建练习失败');
+      }
+      
+      const data = await response.json();
+      router.push(`/practice/${data.practice._id}`);
+    } catch (error) {
+      console.error('创建练习错误:', error);
+      setError('创建练习失败，请重试');
+      setLoading(false);
+    }
+  };
+  
+  // 创建随机练习
+  const createRandomPractice = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      
+      // 使用默认用户ID
+      const defaultUserId = '6804c5d6112eb76d7c0ec957';
+      
+      const response = await fetch('/api/practices', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          type: 'random',
+          count: 5, // 每次练习5题
+          userId: defaultUserId // 添加默认用户ID
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('创建练习失败');
+      }
+      
+      const data = await response.json();
+      router.push(`/practice/${data.practice._id}`);
+    } catch (error) {
+      console.error('创建练习错误:', error);
+      setError('创建练习失败，请重试');
+      setLoading(false);
+    }
+  };
+  
+  // 格式化日期
+  const formatDate = (dateString: string) => {
+    const now = new Date();
+    const date = new Date(dateString);
+    
+    const diffMs = now.getTime() - date.getTime();
+    const diffMins = Math.floor(diffMs / 60000);
+    const diffHours = Math.floor(diffMs / 3600000);
+    const diffDays = Math.floor(diffMs / 86400000);
+    
+    if (diffMins < 60) {
+      return `${diffMins}分钟前`;
+    } else if (diffHours < 24) {
+      return `${diffHours}小时前`;
+    } else if (diffDays < 7) {
+      return `${diffDays}天前`;
+    } else {
+      return date.toLocaleDateString('zh-CN');
+    }
+  };
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gray-50">
+        <Navbar />
+        <main className="pt-16">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 flex items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-gray-500" />
+            <span className="ml-2 text-gray-500">正在创建练习...</span>
+          </div>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -15,6 +178,12 @@ export default function Practice() {
       <main className="pt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
           <h1 className="text-2xl font-bold text-gray-900 mb-8">题库练习</h1>
+          
+          {error && (
+            <Alert variant="destructive" className="mb-6">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
             {/* 每日一练卡片 */}
@@ -59,7 +228,7 @@ export default function Practice() {
                 <div className="space-y-4">
                   <div className="flex justify-between items-center">
                     <p className="text-sm text-gray-600">待复习错题</p>
-                    <span className="text-lg font-semibold text-red-600">12</span>
+                    <span className="text-lg font-semibold text-red-600">{mistakeCount}</span>
                   </div>
                   <Button 
                     className="w-full bg-red-600 hover:bg-red-700"
@@ -71,18 +240,23 @@ export default function Practice() {
               </CardContent>
             </Card>
 
-            {/* 专项训练卡片 */}
+            {/* 随机练习卡片 */}
             <Card className="bg-gradient-to-br from-purple-50 to-violet-50 border-purple-200">
               <CardHeader>
                 <CardTitle className="flex items-center">
                   <Target className="w-5 h-5 mr-2 text-purple-600" />
-                  专项训练
+                  随机练习
                 </CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="space-y-4">
-                  <Button className="w-full bg-purple-600 hover:bg-purple-700">
-                    开始训练
+                  <p className="text-sm text-gray-600">随机抽取多个题目练习</p>
+                  <Button 
+                    className="w-full bg-purple-600 hover:bg-purple-700"
+                    onClick={createRandomPractice}
+                    disabled={loading}
+                  >
+                    开始随机练习
                   </Button>
                 </div>
               </CardContent>
@@ -90,7 +264,7 @@ export default function Practice() {
           </div>
 
           {/* 题目分类区域 */}
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+          <div className="mb-8">
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center">
@@ -99,59 +273,22 @@ export default function Practice() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-2 gap-4">
-                  <Button variant="outline" className="flex items-center justify-start">
-                    <Star className="w-4 h-4 mr-2" />
-                    数据结构
-                  </Button>
-                  <Button variant="outline" className="flex items-center justify-start">
-                    <TrendingUp className="w-4 h-4 mr-2" />
-                    算法分析
-                  </Button>
-                  <Button variant="outline" className="flex items-center justify-start">
-                    <Target className="w-4 h-4 mr-2" />
-                    计算机网络
-                  </Button>
-                  <Button variant="outline" className="flex items-center justify-start">
-                    <BookOpen className="w-4 h-4 mr-2" />
-                    操作系统
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* 学习进度卡片 */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center">
-                  <TrendingUp className="w-5 h-5 mr-2" />
-                  学习进度
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
-                    <div>
-                      <h3 className="font-medium">本周完成题目</h3>
-                      <div className="flex items-center mt-1">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div className="bg-green-600 h-2.5 rounded-full" style={{ width: '70%' }}></div>
-                        </div>
-                        <span className="ml-2 text-sm text-gray-600">70%</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {categories.map((category) => (
+                    <Button 
+                      key={category.name}
+                      variant="outline" 
+                      className="flex-col h-auto p-4 justify-start items-start text-left"
+                      onClick={() => createCategoryPractice(category.name)}
+                      disabled={loading}
+                    >
+                      <div className="flex items-center w-full mb-2">
+                        {category.icon}
+                        <span className="font-medium">{category.name}</span>
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
-                    <div>
-                      <h3 className="font-medium">正确率</h3>
-                      <div className="flex items-center mt-1">
-                        <div className="w-full bg-gray-200 rounded-full h-2.5">
-                          <div className="bg-blue-600 h-2.5 rounded-full" style={{ width: '85%' }}></div>
-                        </div>
-                        <span className="ml-2 text-sm text-gray-600">85%</span>
-                      </div>
-                    </div>
-                  </div>
+                      <p className="text-xs text-gray-500">{category.description}</p>
+                    </Button>
+                  ))}
                 </div>
               </CardContent>
             </Card>
@@ -167,26 +304,42 @@ export default function Practice() {
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
-                  <div>
-                    <h3 className="font-medium">二叉树遍历</h3>
-                    <p className="text-sm text-gray-500">数据结构 - 树</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">正确率: 80%</p>
-                    <p className="text-sm text-gray-500">上次练习: 2小时前</p>
-                  </div>
-                </div>
-                <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
-                  <div>
-                    <h3 className="font-medium">排序算法</h3>
-                    <p className="text-sm text-gray-500">算法分析 - 排序</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-500">正确率: 65%</p>
-                    <p className="text-sm text-gray-500">上次练习: 昨天</p>
-                  </div>
-                </div>
+                {recentPractices.length > 0 ? (
+                  recentPractices.map(practice => (
+                    <div 
+                      key={practice._id}
+                      className="flex items-center justify-between p-4 bg-white rounded-lg border hover:bg-gray-50 cursor-pointer"
+                      onClick={() => router.push(`/practice/${practice._id}`)}
+                    >
+                      <div>
+                        <h3 className="font-medium">{practice.title}</h3>
+                        <p className="text-sm text-gray-500">
+                          {practice.type === 'category' ? practice.category : practice.type}
+                        </p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm text-gray-500">
+                          正确率: {practice.completed ? `${practice.accuracy.toFixed(1)}%` : '未完成'}
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          {formatDate(practice.createdAt)}
+                        </p>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <p className="text-center py-4 text-gray-500">暂无练习记录</p>
+                )}
+                
+                {recentPractices.length > 0 && (
+                  <Button 
+                    variant="outline" 
+                    className="w-full"
+                    onClick={() => router.push('/practice/history')}
+                  >
+                    查看更多
+                  </Button>
+                )}
               </div>
             </CardContent>
           </Card>
