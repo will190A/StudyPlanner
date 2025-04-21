@@ -26,6 +26,26 @@
       "static/chunks/main-app.js",
       "static/chunks/app/home/page.js"
     ],
+    "/practice/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/practice/page.js"
+    ],
+    "/practice/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/practice/[id]/page.js"
+    ],
+    "/daily/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/daily/page.js"
+    ],
+    "/register/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/register/page.js"
+    ],
     "/plans/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
@@ -36,30 +56,15 @@
       "static/chunks/main-app.js",
       "static/chunks/app/plans/layout.js"
     ],
-    "/practice/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/practice/page.js"
-    ],
-    "/daily/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/daily/page.js"
-    ],
-    "/practice/[id]/page": [
-      "static/chunks/webpack.js",
-      "static/chunks/main-app.js",
-      "static/chunks/app/practice/[id]/page.js"
-    ],
     "/reports/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
       "static/chunks/app/reports/page.js"
     ],
-    "/mistakes/page": [
+    "/practice/history/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/mistakes/page.js"
+      "static/chunks/app/practice/history/page.js"
     ]
   }
 }
