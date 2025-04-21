@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore, usePlanStore } from '@/lib/store'
+import { usePlanStore } from '@/lib/store'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Label } from '@/components/ui/label'
@@ -10,9 +11,9 @@ import { DatePicker } from '@/components/ui/date-picker'
 import { Slider } from '@/components/ui/slider'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
-import { Input } from '@/components/ui/input'
 import { Textarea } from '@/components/ui/textarea'
 import { cn } from '@/lib/utils'
+import Navbar from '@/components/Navbar'
 
 interface Task {
   id: string
@@ -36,7 +37,7 @@ interface StudyPlan {
 
 export default function GeneratePage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const { data: session, status } = useSession()
   const { savePlan, updatePlan, isLoading: isPlanLoading, error } = usePlanStore()
   const [subjectsInput, setSubjectsInput] = useState('')
   const [startDate, setStartDate] = useState<Date>(new Date())
@@ -50,16 +51,17 @@ export default function GeneratePage() {
   const [isGenerating, setIsGenerating] = useState(false)
   const [errorMessage, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login')
-    }
-  }, [isAuthenticated, router])
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     setIsGenerating(true)
     setError(null)
+
+    // 检查用户是否已登录
+    if (!session?.user?.id) {
+      setError('请先登录')
+      setIsGenerating(false)
+      return
+    }
 
     // 将输入的科目字符串转换为数组
     const subjects = subjectsInput
@@ -101,7 +103,7 @@ export default function GeneratePage() {
       // 保存计划
       const plan: StudyPlan = {
         id: '', // 服务器会生成id
-        userId: user?.id || '',
+        userId: session.user.id,
         subjects,
         startDate: startDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
         endDate: endDate.toLocaleDateString('zh-CN', { year: 'numeric', month: '2-digit', day: '2-digit' }).replace(/\//g, '-'),
@@ -129,8 +131,17 @@ export default function GeneratePage() {
     }
   }
 
+  // 加载中状态
+  if (status === 'loading') {
+    return (
+      <div className="flex justify-center items-center min-h-screen">
+        <Loader2 className="h-8 w-8 animate-spin" />
+      </div>
+    )
+  }
+
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 pt-16">
       {errorMessage && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription className="flex items-center">

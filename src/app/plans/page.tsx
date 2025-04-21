@@ -2,31 +2,30 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore, usePlanStore } from '@/lib/store'
+import { usePlanStore } from '@/lib/store'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2 } from 'lucide-react'
 import Link from 'next/link'
+import Navbar from '@/components/Navbar'
 
 export default function PlansPage() {
   const router = useRouter()
-  const { user, isAuthenticated } = useAuthStore()
+  const { data: session, status } = useSession()
   const { fetchPlans, isLoading, error, plans } = usePlanStore()
   const [mounted, setMounted] = useState(false)
 
   useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login')
-      return
-    }
-
     setMounted(true)
-    if (user) {
-      fetchPlans(user.id)
+    
+    // 如果用户已登录，获取其学习计划
+    if (session?.user?.id) {
+      fetchPlans(session.user.id)
     }
-  }, [isAuthenticated, router, user, fetchPlans])
+  }, [session, fetchPlans])
 
   const calculateProgress = (tasks: any[]) => {
     if (!tasks || !Array.isArray(tasks)) return 0
@@ -35,7 +34,8 @@ export default function PlansPage() {
     return totalTasks > 0 ? (completedTasks / totalTasks) * 100 : 0
   }
 
-  if (!mounted) {
+  // 加载中状态
+  if (status === 'loading' || !mounted) {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -44,7 +44,7 @@ export default function PlansPage() {
   }
 
   return (
-    <div className="container mx-auto p-4">
+    <div className="container mx-auto p-4 pt-16">
       {error && (
         <Alert variant="destructive" className="mb-4">
           <AlertDescription>{error}</AlertDescription>

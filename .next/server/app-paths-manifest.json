@@ -1,6 +1,13 @@
 {
-  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
   "/home/page": "app/home/page.js",
+  "/practice/page": "app/practice/page.js",
+  "/practice/[id]/page": "app/practice/[id]/page.js",
+  "/daily/page": "app/daily/page.js",
+  "/mistakes/page": "app/mistakes/page.js",
+  "/api/mistakes/route": "app/api/mistakes/route.js",
+  "/api/practices/route": "app/api/practices/route.js",
+  "/api/practices/[id]/route": "app/api/practices/[id]/route.js",
   "/login/page": "app/login/page.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
   "/plans/page": "app/plans/page.js"
 }

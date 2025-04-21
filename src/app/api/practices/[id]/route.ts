@@ -11,47 +11,28 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const { searchParams } = new URL(request.url);
-    const requestedUserId = searchParams.get('userId');
-    
-    let userId: string | undefined;
-    
-    // 如果提供了userId查询参数，使用它
-    if (requestedUserId) {
-      userId = requestedUserId;
-    } else {
-      // 否则检查当前用户会话
-      const session = await getServerSession(authOptions);
-      
-      if (!session) {
-        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-      }
-      
-      userId = session.user.id;
-    }
-
-    const { id } = params;
-    
+    // Connect to the database
     await connect();
     
-    // 如果提供了userId参数，仅根据ID查找，否则同时检查userId
-    const query = requestedUserId 
-      ? { _id: id }
-      : { _id: id, userId };
-    
-    const practice = await Practice.findOne(query);
-    
+    // Find practice by ID
+    const practice = await Practice.findOne({
+      _id: params.id
+    });
+
     if (!practice) {
-      return NextResponse.json({ error: 'Practice not found' }, { status: 404 });
+      return NextResponse.json(
+        { error: "Practice not found" },
+        { status: 404 }
+      );
     }
     
-    // 获取题目详情
+    // Get question details
     const questionIds = practice.questions.map(q => q.questionId);
     const questions = await Question.find({ 
       _id: { $in: questionIds } 
     }).select('-answer -explanation');
     
-    // 将题目信息与练习记录合并
+    // Merge question information with practice record
     const questionsWithDetail = practice.questions.map(practiceQuestion => {
       const questionDetail = questions.find(q => 
         q._id.toString() === practiceQuestion.questionId.toString()
@@ -68,8 +49,11 @@ export async function GET(
       questions: questionsWithDetail
     });
   } catch (error) {
-    console.error('Error fetching practice:', error);
-    return NextResponse.json({ error: 'Failed to fetch practice' }, { status: 500 });
+    console.error("Error fetching practice:", error);
+    return NextResponse.json(
+      { error: "Failed to fetch practice" },
+      { status: 500 }
+    );
   }
 }
 
