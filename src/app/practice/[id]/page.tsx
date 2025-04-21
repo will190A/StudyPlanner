@@ -426,6 +426,7 @@ export default function PracticePage({ params }: { params: { id: string } }) {
           {/* 当前题目 */}
           {currentQuestion && (
             <QuestionCard
+              key={`question-${currentQuestion._id}-${currentQuestionIndex}`}
               id={currentQuestion._id}
               title={currentQuestion.title}
               content={currentQuestion.content}
