@@ -106,6 +106,7 @@ export default function PracticePage({ params }: { params: { id: string } }) {
         }
         
         const data = await response.json()
+        console.log('获取到练习数据:', data)
         setPractice(data)
         
         // 获取所有题目
@@ -129,16 +130,26 @@ export default function PracticePage({ params }: { params: { id: string } }) {
           
           const answersData: Record<string, string | string[]> = {}
           const explanationsData: Record<string, string> = {}
+          const questionResultsData: Record<string, boolean> = {}
           
-          // 获取用户的答案
+          // 获取用户的答案和题目结果
           const userAnswers: Record<string, string | string[]> = {}
           data.questions.forEach((q: PracticeQuestion) => {
             if (q.userAnswer) {
               userAnswers[q.questionId] = q.userAnswer
+              
+              // 重要：保存题目的正确/错误状态
+              questionResultsData[q.questionId] = q.isCorrect
+              console.log(`题目${q.questionId}实际状态:`, q.isCorrect)
             }
           })
           
+          console.log('从服务器获取的用户答案:', userAnswers)
+          console.log('从服务器获取的题目结果:', questionResultsData)
+          
+          // 设置答案和题目结果状态
           setAnswers(userAnswers)
+          setQuestionResults(questionResultsData)
           
           // 从服务器获取正确答案和解析
           for (const questionId of questionIds) {
@@ -419,7 +430,7 @@ export default function PracticePage({ params }: { params: { id: string } }) {
               {isCompleted && (
                 <div className="flex items-center text-green-600">
                   <Check className="h-4 w-4 mr-1" />
-                  <span>正确率: {calculateAccuracy().toFixed(1)}%</span>
+                  <span>正确率: {practice?.accuracy ? practice.accuracy.toFixed(1) : calculateAccuracy().toFixed(1)}%</span>
                 </div>
               )}
             </div>
@@ -430,7 +441,10 @@ export default function PracticePage({ params }: { params: { id: string } }) {
             {questions.map((q, index) => {
               const isAnswered = !!answers[q._id]
               const isRevealed = !!revealedAnswers[q._id]
+              // 使用服务器返回的题目正确性状态
               const isCorrect = questionResults[q._id]
+              
+              console.log(`题目导航 - 题目${q._id}状态:`, {isAnswered, isRevealed, isCorrect})
               
               return (
                 <Button 
@@ -534,7 +548,7 @@ export default function PracticePage({ params }: { params: { id: string } }) {
                   <div className="p-4 bg-blue-50 rounded-md">
                     <div className="text-sm text-blue-600">正确率</div>
                     <div className="text-2xl font-bold text-blue-700">
-                      {calculateAccuracy().toFixed(1)}%
+                      {practice?.accuracy ? practice.accuracy.toFixed(1) : calculateAccuracy().toFixed(1)}%
                     </div>
                   </div>
                   
