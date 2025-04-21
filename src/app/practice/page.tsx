@@ -329,55 +329,56 @@ export default function Practice() {
             </Card>
           </div>
 
-          {/* 最近练习记录 */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center">
-                <History className="w-5 h-5 mr-2" />
-                最近练习
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-4">
-                {recentPractices.length > 0 ? (
-                  recentPractices.map(practice => (
-                    <div 
-                      key={practice._id}
-                      className="flex items-center justify-between p-4 bg-white rounded-lg border hover:bg-gray-50 cursor-pointer"
-                      onClick={() => router.push(`/practice/${practice._id}`)}
-                    >
-                      <div>
-                        <h3 className="font-medium">{practice.title}</h3>
-                        <p className="text-sm text-gray-500">
-                          {practice.type === 'category' ? practice.category : practice.type}
-                        </p>
-                      </div>
-                      <div className="text-right">
-                        <p className="text-sm text-gray-500">
-                          正确率: {practice.completed ? `${practice.accuracy.toFixed(1)}%` : '未完成'}
-                        </p>
-                        <p className="text-sm text-gray-500">
-                          {formatDate(practice.createdAt)}
-                        </p>
-                      </div>
-                    </div>
-                  ))
-                ) : (
-                  <p className="text-center py-4 text-gray-500">暂无练习记录</p>
-                )}
-                
-                {recentPractices.length > 0 && (
-                  <Button 
-                    variant="outline" 
-                    className="w-full"
-                    onClick={() => router.push('/practice/history')}
+          {/* 最近练习 */}
+          <div className="mb-12">
+            <div className="flex items-center mb-4">
+              <History className="w-5 h-5 mr-2" />
+              <h2 className="text-xl font-bold text-gray-900">最近练习</h2>
+            </div>
+            {recentPractices.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {recentPractices.map((practice) => (
+                  <Card 
+                    key={practice._id}
+                    className="cursor-pointer hover:shadow-md transition-shadow"
+                    onClick={() => router.push(`/practice/${practice._id}`)}
                   >
-                    查看更多
-                  </Button>
-                )}
+                    <CardHeader className="pb-2 pt-3 px-4">
+                      <CardTitle className="text-md">{practice.title || `${practice.type === 'daily' ? '每日练习' : practice.type === 'category' ? '专项练习' : '随机练习'}`}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="pb-3 pt-0 px-4">
+                      <div className="text-xs text-gray-500 mb-2">
+                        {formatDate(practice.timeStarted)}
+                      </div>
+                      <div className="flex justify-between items-center">
+                        <div className="flex items-center flex-wrap gap-1">
+                          <span className="text-xs font-medium px-2 py-0.5 rounded bg-blue-100 text-blue-800">
+                            {practice.type === 'daily' ? '每日练习' :
+                             practice.type === 'category' ? '专项练习' :
+                             practice.type === 'review' ? '复习练习' : '随机练习'}
+                          </span>
+                          {practice.category && (
+                            <span className="text-xs font-medium px-2 py-0.5 rounded bg-purple-100 text-purple-800">
+                              {practice.category}
+                            </span>
+                          )}
+                        </div>
+                        {practice.completed && (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded bg-green-100 text-green-800 whitespace-nowrap">
+                            正确率: {practice.accuracy.toFixed(1)}%
+                          </span>
+                        )}
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
               </div>
-            </CardContent>
-          </Card>
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                暂无练习记录
+              </div>
+            )}
+          </div>
         </div>
       </main>
     </div>
