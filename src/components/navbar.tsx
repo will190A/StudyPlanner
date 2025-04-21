@@ -8,7 +8,7 @@ const Navbar = () => {
   const pathname = usePathname()
 
   const navItems = [
-    { name: '首页', href: '/dashboard' },
+    { name: '首页', href: '/home' },
     { name: '学习计划', href: '/plans' },
     { name: '题库练习', href: '/practice' },
     { name: '错题本', href: '/mistakes' },
@@ -22,7 +22,7 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex">
             <div className="flex-shrink-0 flex items-center">
-              <Link href="/dashboard" className="text-xl font-bold text-gray-900">
+              <Link href="/home" className="text-xl font-bold text-gray-900">
                 StudyPlanner
               </Link>
             </div>
