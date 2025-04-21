@@ -1,7 +1,7 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import Navbar from '@/components/Navbar';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import Navbar from '@/components/Navbar'
 
-export default function Dashboard() {
+export default function Home() {
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
@@ -105,5 +105,5 @@ export default function Dashboard() {
         </div>
       </main>
     </div>
-  );
+  )
 } 

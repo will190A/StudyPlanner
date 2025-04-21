@@ -41,7 +41,7 @@ export default function LoginPage() {
       }
 
       login(data)
-      router.push('/dashboard')
+      router.push('/home')
     } catch (error) {
       setError('登录失败，请稍后重试')
     } finally {
