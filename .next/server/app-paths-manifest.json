@@ -1,9 +1,9 @@
 {
   "/(landing)/landing/page": "app/(landing)/landing/page.js",
   "/home/page": "app/home/page.js",
-  "/practice/page": "app/practice/page.js",
   "/practice/[id]/page": "app/practice/[id]/page.js",
-  "/api/practices/route": "app/api/practices/route.js",
+  "/practice/page": "app/practice/page.js",
+  "/api/questions/verify/route": "app/api/questions/verify/route.js",
   "/api/practices/[id]/route": "app/api/practices/[id]/route.js",
-  "/api/questions/verify/route": "app/api/questions/verify/route.js"
+  "/api/practices/route": "app/api/practices/route.js"
 }

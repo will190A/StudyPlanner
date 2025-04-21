@@ -49,29 +49,41 @@ export async function POST(request: Request) {
     
     if (Array.isArray(question.answer)) {
       // 多选题
+      console.log('多选题答案验证');
       if (Array.isArray(userAnswer)) {
         // 排序两个数组，确保顺序不同但内容相同的答案也能被判定为正确
         const sortedCorrectAnswer = [...question.answer].sort();
         const sortedUserAnswer = [...userAnswer].sort();
         
+        console.log('排序后正确答案:', sortedCorrectAnswer);
+        console.log('排序后用户答案:', sortedUserAnswer);
+        
         // 检查长度是否相同
         if (sortedCorrectAnswer.length === sortedUserAnswer.length) {
           // 检查每个元素是否相同
           isCorrect = sortedCorrectAnswer.every((ans, index) => ans === sortedUserAnswer[index]);
+          console.log('数组长度相同，逐个比较结果:', isCorrect);
         }
       }
     } else {
       // 单选题、判断题、填空题或编程题
+      console.log('单选/判断/填空题答案验证');
       isCorrect = question.answer === userAnswer;
+      console.log('严格比较结果:', isCorrect);
       
       // 如果不相等，尝试更宽松的比较
       if (!isCorrect) {
         console.log('严格比较不相等，尝试更宽松比较');
-        isCorrect = String(question.answer).trim() === String(userAnswer).trim();
+        const trimmedCorrect = String(question.answer).trim();
+        const trimmedUser = String(userAnswer).trim();
+        console.log('修剪后正确答案:', trimmedCorrect);
+        console.log('修剪后用户答案:', trimmedUser);
+        isCorrect = trimmedCorrect === trimmedUser;
+        console.log('宽松比较结果:', isCorrect);
       }
     }
     
-    console.log('是否正确:', isCorrect);
+    console.log('最终是否正确:', isCorrect);
     
     // 如果答案不正确，记录错题
     if (!isCorrect) {

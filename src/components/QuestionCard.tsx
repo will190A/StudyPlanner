@@ -123,7 +123,7 @@ export default function QuestionCard({
                       className={
                         isRevealed && correctAnswer === option.label 
                           ? 'text-green-600 font-medium' 
-                          : isRevealed && userAnswer === option.label && userAnswer !== correctAnswer 
+                          : isRevealed && userAnswer === option.label && isCorrect === false
                             ? 'text-red-600 font-medium'
                             : ''
                       }

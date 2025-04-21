@@ -403,7 +403,7 @@ export default function PracticePage({ params }: { params: { id: string } }) {
             {questions.map((q, index) => {
               const isAnswered = !!answers[q._id]
               const isRevealed = !!revealedAnswers[q._id]
-              const isCorrect = practice.questions.find(pq => pq.questionId === q._id)?.isCorrect
+              const isCorrect = questionResults[q._id]
               
               return (
                 <Button 
