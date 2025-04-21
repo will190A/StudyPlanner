@@ -3,7 +3,7 @@
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
-import { useSession, signOut } from "next-auth/react"
+import { useSession } from "next-auth/react"
 import { User } from "lucide-react"
 
 const Navbar = () => {
@@ -18,10 +18,9 @@ const Navbar = () => {
     { name: '学习报告', href: '/reports' }
   ]
 
-  const handleSignOut = async () => {
-    await signOut({ redirect: false })
-    router.push('/login')
-    router.refresh()
+  const handleSignOut = () => {
+    // 使用强制登出路由进行彻底的登出
+    router.push('/force-logout')
   }
 
   return (

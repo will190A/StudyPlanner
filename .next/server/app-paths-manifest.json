@@ -1,13 +1,16 @@
 {
-  "/home/page": "app/home/page.js",
+  "/_not-found/page": "app/_not-found/page.js",
   "/practice/page": "app/practice/page.js",
-  "/practice/[id]/page": "app/practice/[id]/page.js",
-  "/daily/page": "app/daily/page.js",
   "/mistakes/page": "app/mistakes/page.js",
-  "/api/mistakes/route": "app/api/mistakes/route.js",
-  "/api/practices/route": "app/api/practices/route.js",
-  "/api/practices/[id]/route": "app/api/practices/[id]/route.js",
-  "/login/page": "app/login/page.js",
+  "/(landing)/landing/page": "app/(landing)/landing/page.js",
+  "/home/page": "app/home/page.js",
+  "/practice/[id]/page": "app/practice/[id]/page.js",
+  "/page": "app/page.js",
   "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
+  "/(auth)/login/page": "app/(auth)/login/page.js",
+  "/api/practices/route": "app/api/practices/route.js",
+  "/api/mistakes/route": "app/api/mistakes/route.js",
+  "/reports/page": "app/reports/page.js",
+  "/(auth)/register/page": "app/(auth)/register/page.js",
   "/plans/page": "app/plans/page.js"
 }

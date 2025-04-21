@@ -10,7 +10,7 @@ export default async function Landing() {
   const session = await getServerSession(authOptions)
 
   if (session) {
-    redirect('/dashboard')
+    redirect('/home')
   }
 
   return (

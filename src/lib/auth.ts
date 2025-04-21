@@ -10,6 +10,8 @@ export const authOptions: NextAuthOptions = {
   },
   session: {
     strategy: 'jwt',
+    // 设置会话有效期为7天（以秒为单位）
+    maxAge: 7 * 24 * 60 * 60, // 7天
   },
   providers: [
     CredentialsProvider({
