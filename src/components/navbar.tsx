@@ -11,9 +11,7 @@ const Navbar = () => {
     { name: '首页', href: '/home' },
     { name: '学习计划', href: '/plans' },
     { name: '题库练习', href: '/practice' },
-    { name: '错题本', href: '/mistakes' },
-    { name: '学习报告', href: '/reports' },
-    { name: '每日一练', href: '/daily' }
+    { name: '学习报告', href: '/reports' }
   ]
 
   return (
