@@ -60,14 +60,6 @@ export default function PracticePage({ params }: { params: { id: string } }) {
   const [startTime] = useState(new Date())
   const [elapsedTime, setElapsedTime] = useState(0)
   
-  useEffect(() => {
-    const timer = setInterval(() => {
-      setElapsedTime(Math.floor((new Date().getTime() - startTime.getTime()) / 1000))
-    }, 1000)
-    
-    return () => clearInterval(timer)
-  }, [startTime])
-  
   // 格式化时间
   const formatTime = (seconds: number) => {
     const hours = Math.floor(seconds / 3600)
@@ -77,6 +69,27 @@ export default function PracticePage({ params }: { params: { id: string } }) {
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   }
   
+  // 计时器逻辑
+  useEffect(() => {
+    // 如果已完成，不启动计时器
+    if (isCompleted) {
+      return;
+    }
+    
+    console.log('启动计时器，isCompleted =', isCompleted);
+    
+    // 创建计时器
+    const timer = setInterval(() => {
+      setElapsedTime(Math.floor((new Date().getTime() - startTime.getTime()) / 1000));
+    }, 1000);
+    
+    // 清理函数 - 组件卸载或依赖项变化时执行
+    return () => {
+      console.log('清理计时器，isCompleted =', isCompleted);
+      clearInterval(timer);
+    };
+  }, [isCompleted, startTime]); // 依赖于isCompleted和startTime
+
   // 获取练习详情
   useEffect(() => {
     const fetchPractice = async () => {
@@ -99,9 +112,17 @@ export default function PracticePage({ params }: { params: { id: string } }) {
         const practiceQuestions = data.questions.map((q: PracticeQuestion) => q.questionDetail)
         setQuestions(practiceQuestions)
         
-        // 如果练习已完成，获取所有的答案和解析
+        // 如果练习已完成，获取所有的答案和解析并停止计时
         if (data.completed) {
           setIsCompleted(true)
+          
+          // 设置最终时间
+          if (data.timeCompleted && data.timeStarted) {
+            const startTime = new Date(data.timeStarted).getTime();
+            const endTime = new Date(data.timeCompleted).getTime();
+            const duration = Math.floor((endTime - startTime) / 1000);
+            setElapsedTime(duration);
+          }
           
           // 获取所有题目的正确答案和解析
           const questionIds = practiceQuestions.map((q: Question) => q._id)
@@ -235,6 +256,13 @@ export default function PracticePage({ params }: { params: { id: string } }) {
     try {
       setIsSubmitting(true)
       
+      // 预先设置isCompleted，立即停止计时器
+      setIsCompleted(true)
+      
+      // 记录提交时的持续时间
+      const finalDuration = Math.floor((new Date().getTime() - startTime.getTime()) / 1000)
+      setElapsedTime(finalDuration)
+      
       // 使用默认用户ID
       const defaultUserId = '6804c5d6112eb76d7c0ec957';
       
@@ -256,7 +284,6 @@ export default function PracticePage({ params }: { params: { id: string } }) {
       
       const data = await response.json()
       setPractice(data.practice)
-      setIsCompleted(true)
       
       // 从服务器获取所有正确答案和解析
       for (const question of questions) {

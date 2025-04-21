@@ -1,10 +1,12 @@
 {
   "/practice/page": "app/practice/page.js",
+  "/practice/[id]/page": "app/practice/[id]/page.js",
   "/home/page": "app/home/page.js",
   "/reports/page": "app/reports/page.js",
-  "/practice/[id]/page": "app/practice/[id]/page.js",
   "/practice/history/page": "app/practice/history/page.js",
   "/api/practices/[id]/route": "app/api/practices/[id]/route.js",
+  "/api/questions/[id]/route": "app/api/questions/[id]/route.js",
+  "/api/auth/[...nextauth]/route": "app/api/auth/[...nextauth]/route.js",
   "/api/practices/route": "app/api/practices/route.js",
   "/api/mistakes/route": "app/api/mistakes/route.js",
   "/api/questions/verify/route": "app/api/questions/verify/route.js"
