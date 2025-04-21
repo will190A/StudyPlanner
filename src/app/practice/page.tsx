@@ -363,9 +363,13 @@ export default function Practice() {
                             </span>
                           )}
                         </div>
-                        {practice.completed && (
+                        {practice.completed ? (
                           <span className="text-xs font-medium px-2 py-0.5 rounded bg-green-100 text-green-800 whitespace-nowrap">
                             正确率: {practice.accuracy.toFixed(1)}%
+                          </span>
+                        ) : (
+                          <span className="text-xs font-medium px-2 py-0.5 rounded bg-yellow-100 text-yellow-800 whitespace-nowrap">
+                            未完成
                           </span>
                         )}
                       </div>
