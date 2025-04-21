@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/store'
+import { signIn } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
@@ -13,7 +13,6 @@ import Link from 'next/link'
 
 export default function LoginPage() {
   const router = useRouter()
-  const { login } = useAuthStore()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -25,26 +24,25 @@ export default function LoginPage() {
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
+      // 使用NextAuth的signIn函数进行登录
+      const result = await signIn('credentials', {
+        redirect: false,
+        email,
+        password,
       })
 
-      const data = await response.json()
-
-      if (!response.ok) {
-        setError(data.error || '登录失败')
+      if (result?.error) {
+        setError(result.error || '登录失败')
+        setIsLoading(false)
         return
       }
 
-      login(data)
+      // 登录成功，跳转到首页
       router.push('/home')
+      router.refresh() // 刷新路由以确保状态更新
     } catch (error) {
+      console.error('登录错误:', error)
       setError('登录失败，请稍后重试')
-    } finally {
       setIsLoading(false)
     }
   }

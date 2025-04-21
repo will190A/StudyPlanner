@@ -8,6 +8,7 @@ import Navbar from '@/components/Navbar'
 import QuestionCard from '@/components/QuestionCard'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 import { Loader2, ArrowLeft, Clock, Check } from 'lucide-react'
+import { useSession } from 'next-auth/react'
 
 interface Question {
   _id: string
@@ -43,6 +44,7 @@ interface Practice {
 
 export default function PracticePage({ params }: { params: { id: string } }) {
   const router = useRouter()
+  const { data: session } = useSession()
   const [practice, setPractice] = useState<Practice | null>(null)
   const [questions, setQuestions] = useState<Question[]>([])
   const [loading, setLoading] = useState(true)
@@ -59,6 +61,16 @@ export default function PracticePage({ params }: { params: { id: string } }) {
   // 开始计时器
   const [startTime] = useState(new Date())
   const [elapsedTime, setElapsedTime] = useState(0)
+  
+  // 获取当前用户ID - 如果已登录则使用实际ID，否则使用默认ID
+  const getUserId = () => {
+    // 优先使用session中的用户ID
+    if (session?.user && 'id' in session.user) {
+      return session.user.id as string;
+    }
+    // 没有session时使用默认ID
+    return '6804c5d6112eb76d7c0ec957';
+  };
   
   // 格式化时间
   const formatTime = (seconds: number) => {
@@ -96,10 +108,10 @@ export default function PracticePage({ params }: { params: { id: string } }) {
       try {
         setLoading(true)
         
-        // 使用默认用户ID
-        const defaultUserId = '6804c5d6112eb76d7c0ec957';
+        // 获取当前用户ID
+        const userId = getUserId();
         
-        const response = await fetch(`/api/practices/${params.id}?userId=${defaultUserId}`)
+        const response = await fetch(`/api/practices/${params.id}?userId=${userId}`)
         
         if (!response.ok) {
           throw new Error('Failed to fetch practice')
@@ -202,8 +214,8 @@ export default function PracticePage({ params }: { params: { id: string } }) {
       
       if (!answer) return
       
-      // 使用默认用户ID
-      const defaultUserId = '6804c5d6112eb76d7c0ec957';
+      // 获取当前用户ID
+      const userId = getUserId();
       
       const response = await fetch('/api/questions/verify', {
         method: 'POST',
@@ -213,7 +225,7 @@ export default function PracticePage({ params }: { params: { id: string } }) {
         body: JSON.stringify({
           questionId,
           userAnswer: answer,
-          userId: defaultUserId
+          userId
         })
       })
       
@@ -274,8 +286,8 @@ export default function PracticePage({ params }: { params: { id: string } }) {
       const finalDuration = Math.floor((new Date().getTime() - startTime.getTime()) / 1000)
       setElapsedTime(finalDuration)
       
-      // 使用默认用户ID
-      const defaultUserId = '6804c5d6112eb76d7c0ec957';
+      // 获取当前用户ID
+      const userId = getUserId();
       
       // 提交所有答案
       const response = await fetch(`/api/practices/${practice._id}`, {
@@ -285,7 +297,7 @@ export default function PracticePage({ params }: { params: { id: string } }) {
         },
         body: JSON.stringify({
           answers,
-          userId: defaultUserId
+          userId
         })
       })
       

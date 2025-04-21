@@ -185,6 +185,6 @@ export async function PUT(
     });
   } catch (error) {
     console.error('Error updating practice:', error);
-    return NextResponse.json({ error: 'Failed to update practice' }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch practice' }, { status: 500 });
   }
 } 

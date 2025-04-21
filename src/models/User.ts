@@ -30,4 +30,4 @@ if (mongoose.connection.readyState === 1) {
   initializeUserCollection();
 }
 
-export default mongoose.models.User || mongoose.model('User', userSchema); 
+export const User = mongoose.models.User || mongoose.model('User', userSchema); 

@@ -37,4 +37,7 @@ async function connectDB() {
   return cached.conn;
 }
 
+// 导出connectToDatabase作为别名，保持兼容性
+export const connectToDatabase = connectDB;
+
 export default connectDB; 

@@ -24,6 +24,16 @@ export default function Practice() {
   const [recentPractices, setRecentPractices] = useState<any[]>([]);
   const [mistakeCount, setMistakeCount] = useState(0);
   
+  // 获取当前用户ID - 如果已登录则使用实际ID，否则使用默认ID
+  const getUserId = () => {
+    // 优先使用session中的用户ID
+    if (session?.user && 'id' in session.user) {
+      return session.user.id as string;
+    }
+    // 没有session时使用默认ID
+    return '6804c5d6112eb76d7c0ec957';
+  };
+  
   // 题目分类
   const categories: Category[] = [
     { name: "数据结构", icon: <Database className="w-4 h-4 mr-2" />, description: "包含栈、队列、树、图等数据结构题目" },
@@ -38,17 +48,17 @@ export default function Practice() {
   useEffect(() => {
     fetchRecentPractices();
     fetchMistakeCount();
-  }, []);  // 不依赖session，确保立即获取数据
+  }, [session]); // 添加session依赖，确保登录状态变化时重新获取数据
   
   // 获取最近练习记录
   const fetchRecentPractices = async () => {
     try {
-      // 使用默认用户ID
-      const defaultUserId = '6804c5d6112eb76d7c0ec957';
-      console.log('获取最近练习，使用默认用户ID:', defaultUserId);
+      // 获取当前用户ID
+      const userId = getUserId();
+      console.log('获取最近练习，使用用户ID:', userId);
       
       // 修改API调用，确保使用正确的参数
-      const response = await fetch(`/api/practices?userId=${defaultUserId}&limit=6`);
+      const response = await fetch(`/api/practices?userId=${userId}&limit=6`);
       console.log('获取最近练习响应状态:', response.status);
       
       if (response.ok) {
@@ -93,7 +103,9 @@ export default function Practice() {
   // 获取错题数量
   const fetchMistakeCount = async () => {
     try {
-      const response = await fetch('/api/mistakes?limit=1');
+      // 获取当前用户ID
+      const userId = getUserId();
+      const response = await fetch(`/api/mistakes?userId=${userId}&limit=1`);
       if (response.ok) {
         const data = await response.json();
         setMistakeCount(data.pagination?.total || 0);
@@ -109,8 +121,8 @@ export default function Practice() {
       setLoading(true);
       setError('');
       
-      // 使用默认用户ID
-      const defaultUserId = '6804c5d6112eb76d7c0ec957';
+      // 获取当前用户ID
+      const userId = getUserId();
       
       const response = await fetch('/api/practices', {
         method: 'POST',
@@ -121,7 +133,7 @@ export default function Practice() {
           type: 'category',
           category,
           count: 5, // 每次练习5题
-          userId: defaultUserId // 添加默认用户ID
+          userId // 使用当前用户ID
         })
       });
       
@@ -144,8 +156,8 @@ export default function Practice() {
       setLoading(true);
       setError('');
       
-      // 使用默认用户ID
-      const defaultUserId = '6804c5d6112eb76d7c0ec957';
+      // 获取当前用户ID
+      const userId = getUserId();
       
       const response = await fetch('/api/practices', {
         method: 'POST',
@@ -155,7 +167,7 @@ export default function Practice() {
         body: JSON.stringify({
           type: 'random',
           count: 5, // 每次练习5题
-          userId: defaultUserId // 添加默认用户ID
+          userId // 使用当前用户ID
         })
       });
       

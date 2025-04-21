@@ -1,11 +1,15 @@
 'use client'
 
 import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { usePathname, useRouter } from "next/navigation"
 import { cn } from "@/lib/utils"
+import { useSession, signOut } from "next-auth/react"
+import { User } from "lucide-react"
 
 const Navbar = () => {
   const pathname = usePathname()
+  const router = useRouter()
+  const { data: session } = useSession()
 
   const navItems = [
     { name: '首页', href: '/home' },
@@ -13,6 +17,12 @@ const Navbar = () => {
     { name: '题库练习', href: '/practice' },
     { name: '学习报告', href: '/reports' }
   ]
+
+  const handleSignOut = async () => {
+    await signOut({ redirect: false })
+    router.push('/login')
+    router.refresh()
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 bg-white border-b z-50">
@@ -42,12 +52,31 @@ const Navbar = () => {
             </div>
           </div>
           <div className="hidden sm:ml-6 sm:flex sm:items-center">
-            <Link
-              href="/api/auth/signout"
-              className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
-            >
-              退出登录
-            </Link>
+            {session?.user ? (
+              <>
+                <div className="flex items-center mr-4">
+                  <div className="flex items-center rounded-full bg-indigo-100 text-indigo-800 p-2 mr-2">
+                    <User size={18} />
+                  </div>
+                  <span className="text-gray-700 font-medium">
+                    {session.user.name || '用户'}
+                  </span>
+                </div>
+                <button
+                  onClick={handleSignOut}
+                  className="text-gray-500 hover:text-gray-700 border border-gray-300 px-3 py-1.5 rounded-md text-sm font-medium"
+                >
+                  退出登录
+                </button>
+              </>
+            ) : (
+              <Link
+                href="/login"
+                className="text-gray-500 hover:text-gray-700 px-3 py-2 rounded-md text-sm font-medium"
+              >
+                登录
+              </Link>
+            )}
           </div>
         </div>
       </div>
