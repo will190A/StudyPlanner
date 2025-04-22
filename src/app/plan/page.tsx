@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { useAuthStore, usePlanStore } from '@/lib/store'
+import { usePlanStore } from '@/lib/store'
+import { useSession } from 'next-auth/react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Progress } from '@/components/ui/progress'
@@ -13,26 +14,32 @@ import { Loader2 } from 'lucide-react'
 export default function PlanPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
-  const { user, isAuthenticated } = useAuthStore()
+  const { data: session, status } = useSession()
   const { currentPlan, updateTask, deletePlan, isLoading, error, fetchPlans } = usePlanStore()
   const [isDeleting, setIsDeleting] = useState(false)
   const [isLoadingPlan, setIsLoadingPlan] = useState(true)
 
   useEffect(() => {
-    if (!isAuthenticated) {
+    // 如果会话状态仍在加载，则等待
+    if (status === 'loading') return;
+    
+    // 如果用户未登录，则重定向到登录页
+    if (status === 'unauthenticated') {
       router.push('/login')
       return
     }
 
     const loadPlan = async () => {
-      if (user) {
+      if (session?.user) {
         const planId = searchParams.get('id')
         if (!planId) {
           router.push('/plans')
           return
         }
 
-        const result = await fetchPlans(user.id)
+        // 使用 session 中的用户ID
+        const userId = session.user.id as string
+        const result = await fetchPlans(userId)
         if (result.success && result.data) {
           const plan = result.data.find(p => (p._id === planId || p.id === planId))
           if (plan) {
@@ -51,7 +58,7 @@ export default function PlanPage() {
     }
 
     loadPlan()
-  }, [isAuthenticated, router, user, fetchPlans, searchParams])
+  }, [status, session, router, fetchPlans, searchParams])
 
   const handleTaskToggle = async (taskId: string, completed: boolean) => {
     if (!currentPlan) {
