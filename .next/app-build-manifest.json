@@ -26,15 +26,20 @@
       "static/chunks/main-app.js",
       "static/chunks/app/plans/layout.js"
     ],
-    "/(auth)/login/page": [
+    "/practice/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/(auth)/login/page.js"
+      "static/chunks/app/practice/page.js"
     ],
-    "/_not-found/page": [
+    "/reports/page": [
       "static/chunks/webpack.js",
       "static/chunks/main-app.js",
-      "static/chunks/app/_not-found/page.js"
+      "static/chunks/app/reports/page.js"
+    ],
+    "/practice/[id]/page": [
+      "static/chunks/webpack.js",
+      "static/chunks/main-app.js",
+      "static/chunks/app/practice/[id]/page.js"
     ]
   }
 }
