@@ -121,9 +121,9 @@ StudyPlanner/
 
 如有任何问题或建议，欢迎通过以下方式联系：
 
-- 项目维护者：[Your Name]
-- 邮箱：[your.email@example.com]
-- GitHub Issues: [项目 Issues 页面]
+- 项目维护者：[武欣宇 吴雁潇 王耀敏]
+- 邮箱：[carol.xinyu.wu@outlook.com]
+- GitHub Issues: [https://github.com/will190A/StudyPlanner/issues]
 
 ## 🙏 致谢
 
