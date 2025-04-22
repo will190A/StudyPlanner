@@ -1,8 +1,6 @@
 'use client'
 
-import { useEffect } from 'react'
-import { useRouter } from 'next/navigation'
-import { useAuthStore } from '@/lib/store'
+import { useSession } from 'next-auth/react' 
 import { Loader2 } from 'lucide-react'
 
 export default function PlansLayout({
@@ -10,16 +8,10 @@ export default function PlansLayout({
 }: {
   children: React.ReactNode
 }) {
-  const router = useRouter()
-  const { isAuthenticated } = useAuthStore()
-
-  useEffect(() => {
-    if (!isAuthenticated) {
-      router.push('/login')
-    }
-  }, [isAuthenticated, router])
-
-  if (!isAuthenticated) {
+  const { status } = useSession()
+  
+  // 只有在会话正在加载时显示加载指示器
+  if (status === 'loading') {
     return (
       <div className="flex justify-center items-center min-h-screen">
         <Loader2 className="h-8 w-8 animate-spin" />
@@ -27,5 +19,6 @@ export default function PlansLayout({
     )
   }
 
+  // 不管用户是否登录，都渲染子组件
   return <>{children}</>
 } 

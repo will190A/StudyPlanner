@@ -649,14 +649,14 @@ video {
 .right-1 {
   right: 0.25rem;
 }
+.right-2 {
+  right: 0.5rem;
+}
 .top-0 {
   top: 0px;
 }
 .top-1\/2 {
   top: 50%;
-}
-.right-2 {
-  right: 0.5rem;
 }
 .top-2 {
   top: 0.5rem;
@@ -874,14 +874,14 @@ video {
 .w-9 {
   width: 2.25rem;
 }
+.w-\[450px\] {
+  width: 450px;
+}
 .w-auto {
   width: auto;
 }
 .w-full {
   width: 100%;
-}
-.w-\[450px\] {
-  width: 450px;
 }
 .min-w-\[8rem\] {
   min-width: 8rem;
@@ -1101,9 +1101,6 @@ video {
 .border-t {
   border-top-width: 1px;
 }
-.border-none {
-  border-style: none;
-}
 .border-blue-200 {
   --tw-border-opacity: 1;
   border-color: rgb(191 219 254 / var(--tw-border-opacity, 1));
@@ -1111,6 +1108,9 @@ video {
 .border-blue-500 {
   --tw-border-opacity: 1;
   border-color: rgb(59 130 246 / var(--tw-border-opacity, 1));
+}
+.border-destructive {
+  border-color: hsl(var(--destructive));
 }
 .border-destructive\/50 {
   border-color: hsl(var(--destructive) / 0.5);
@@ -1162,9 +1162,6 @@ video {
 .border-white {
   --tw-border-opacity: 1;
   border-color: rgb(255 255 255 / var(--tw-border-opacity, 1));
-}
-.border-destructive {
-  border-color: hsl(var(--destructive));
 }
 .bg-accent {
   background-color: hsl(var(--accent));
@@ -1271,14 +1268,6 @@ video {
 .bg-yellow-100 {
   --tw-bg-opacity: 1;
   background-color: rgb(254 249 195 / var(--tw-bg-opacity, 1));
-}
-.bg-red-50 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(254 242 242 / var(--tw-bg-opacity, 1));
-}
-.bg-slate-50 {
-  --tw-bg-opacity: 1;
-  background-color: rgb(248 250 252 / var(--tw-bg-opacity, 1));
 }
 .bg-gradient-to-br {
   background-image: linear-gradient(to bottom right, var(--tw-gradient-stops));
@@ -1414,6 +1403,9 @@ video {
 .pr-2 {
   padding-right: 0.5rem;
 }
+.pr-6 {
+  padding-right: 1.5rem;
+}
 .pt-0 {
   padding-top: 0px;
 }
@@ -1428,12 +1420,6 @@ video {
 }
 .pt-3 {
   padding-top: 0.75rem;
-}
-.pt-4 {
-  padding-top: 1rem;
-}
-.pr-6 {
-  padding-right: 1.5rem;
 }
 .text-left {
   text-align: left;
@@ -1529,6 +1515,9 @@ video {
 }
 .text-foreground {
   color: hsl(var(--foreground));
+}
+.text-foreground\/50 {
+  color: hsl(var(--foreground) / 0.5);
 }
 .text-gray-400 {
   --tw-text-opacity: 1;
@@ -1632,20 +1621,17 @@ video {
   --tw-text-opacity: 1;
   color: rgb(133 77 14 / var(--tw-text-opacity, 1));
 }
-.text-foreground\/50 {
-  color: hsl(var(--foreground) / 0.5);
-}
 .line-through {
   text-decoration-line: line-through;
 }
 .underline-offset-4 {
   text-underline-offset: 4px;
 }
-.opacity-50 {
-  opacity: 0.5;
-}
 .opacity-0 {
   opacity: 0;
+}
+.opacity-50 {
+  opacity: 0.5;
 }
 .opacity-90 {
   opacity: 0.9;
@@ -1693,13 +1679,13 @@ video {
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
-.transition-shadow {
-  transition-property: box-shadow;
+.transition-opacity {
+  transition-property: opacity;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
-.transition-opacity {
-  transition-property: opacity;
+.transition-shadow {
+  transition-property: box-shadow;
   transition-timing-function: cubic-bezier(0.4, 0, 0.2, 1);
   transition-duration: 150ms;
 }
@@ -1812,12 +1798,12 @@ video {
   background-color: rgb(185 28 28 / var(--tw-bg-opacity, 1));
 }
  
-.hover\:bg-secondary\/80:hover {
-  background-color: hsl(var(--secondary) / 0.8);
-}
- 
 .hover\:bg-secondary:hover {
   background-color: hsl(var(--secondary));
+}
+ 
+.hover\:bg-secondary\/80:hover {
+  background-color: hsl(var(--secondary) / 0.8);
 }
  
 .hover\:from-purple-700:hover {
@@ -1834,6 +1820,10 @@ video {
   color: hsl(var(--accent-foreground));
 }
  
+.hover\:text-foreground:hover {
+  color: hsl(var(--foreground));
+}
+ 
 .hover\:text-gray-700:hover {
   --tw-text-opacity: 1;
   color: rgb(55 65 81 / var(--tw-text-opacity, 1));
@@ -1841,10 +1831,6 @@ video {
  
 .hover\:text-primary-foreground:hover {
   color: hsl(var(--primary-foreground));
-}
- 
-.hover\:text-foreground:hover {
-  color: hsl(var(--foreground));
 }
  
 .hover\:underline:hover {
@@ -2107,12 +2093,12 @@ video {
   --tw-exit-opacity: 0;
 }
  
-.data-\[state\=open\]\:fade-in-0[data-state="open"] {
-  --tw-enter-opacity: 0;
-}
- 
 .data-\[state\=closed\]\:fade-out-80[data-state="closed"] {
   --tw-exit-opacity: 0.8;
+}
+ 
+.data-\[state\=open\]\:fade-in-0[data-state="open"] {
+  --tw-enter-opacity: 0;
 }
  
 .data-\[state\=closed\]\:zoom-out-95[data-state="closed"] {

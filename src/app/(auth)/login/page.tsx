@@ -31,6 +31,9 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState("")
   
+  // 获取回调URL
+  const callbackUrl = searchParams?.get("callbackUrl") || "/home"
+  
   useEffect(() => {
     if (searchParams?.get("registered") === "true") {
       toast({
@@ -54,6 +57,7 @@ export default function LoginPage() {
     setError("")
 
     try {
+      console.log(`[LoginPage] 尝试登录，登录后将重定向到: ${callbackUrl}`)
       const result = await signIn("credentials", {
         email: data.email,
         password: data.password,
@@ -61,12 +65,27 @@ export default function LoginPage() {
       })
 
       if (result?.error) {
+        console.error(`[LoginPage] 登录失败: ${result.error}`)
         setError("邮箱或密码错误")
       } else {
-        router.push("/dashboard")
+        console.log(`[LoginPage] 登录成功，重定向到: ${callbackUrl}`)
+        
+        // 尝试获取localStorage中保存的重定向URL
+        let redirectPath = callbackUrl
+        if (typeof window !== 'undefined') {
+          const savedRedirect = localStorage.getItem('redirectAfterLogin')
+          if (savedRedirect) {
+            redirectPath = savedRedirect
+            localStorage.removeItem('redirectAfterLogin') // 使用后移除
+            console.log(`[LoginPage] 使用localStorage中保存的重定向URL: ${redirectPath}`)
+          }
+        }
+        
+        router.push(decodeURIComponent(redirectPath))
         router.refresh()
       }
     } catch (error) {
+      console.error(`[LoginPage] 登录异常:`, error)
       setError("登录时出现错误，请稍后再试")
     } finally {
       setIsLoading(false)

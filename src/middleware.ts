@@ -6,7 +6,8 @@ import { getToken } from 'next-auth/jwt'
 const authRoutes = [
   '/plan', // 仅单个plan详情页需要验证
   '/practice/create',
-  '/reports/user'
+  '/reports/user',
+  '/generate' // 添加生成计划的路由到需要验证的列表
 ]
 
 // 不需要身份验证的路由列表
@@ -18,6 +19,8 @@ const publicRoutes = [
   '/home',
   '/plans', // 计划列表页可以公开访问
   '/practice',
+  '/mistakes', // 添加错题本页面
+  '/daily', // 添加每日一练页面
   '/reports',
   '/api/plans',
   '/api/practices',
@@ -71,15 +74,20 @@ export async function middleware(request: NextRequest) {
   // 处理页面路由
   // 如果是公开页面，直接放行
   if (publicRoutes.some(route => pathname === route || pathname.startsWith(route + '/'))) {
+    console.log(`[Middleware] 公开页面放行: ${pathname}`)
     return NextResponse.next()
   }
 
   // 如果是需要身份验证的页面但用户未登录，重定向到登录页
   if (authRoutes.some(route => pathname === route || pathname.startsWith(route + '/')) && !token) {
-    return NextResponse.redirect(new URL('/login', request.url))
+    console.log(`[Middleware] 需要认证但未登录，重定向到登录页: ${pathname}`)
+    // 保存当前URL作为登录后的重定向目标
+    const callbackUrl = encodeURIComponent(request.nextUrl.pathname + request.nextUrl.search)
+    return NextResponse.redirect(new URL(`/login?callbackUrl=${callbackUrl}`, request.url))
   }
 
   // 其他情况放行
+  console.log(`[Middleware] 默认放行: ${pathname}`)
   return NextResponse.next()
 }
 
