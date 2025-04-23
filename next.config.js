@@ -10,6 +10,29 @@ const nextConfig = {
     scrollRestoration: true,
   },
   output: 'standalone',
+  env: {
+    HTTP_PROXY: '',
+    HTTPS_PROXY: '',
+    http_proxy: '',
+    https_proxy: '',
+    NO_PROXY: '*',
+  },
+  images: {
+    domains: ['fonts.googleapis.com'],
+  },
+  async headers() {
+    return [
+      {
+        source: '/:path*',
+        headers: [
+          {
+            key: 'Cache-Control',
+            value: 'public, max-age=31536000, immutable',
+          },
+        ],
+      },
+    ];
+  },
 }
 
 module.exports = nextConfig 
